@@ -216,14 +216,11 @@ export default function AuthPage() {
         {/* Top bar */}
         <div className="flex items-center justify-between px-8 py-5">
           <div className="flex items-center gap-2 lg:hidden">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold"
-              style={{
-                background: "linear-gradient(135deg, #3b82f6, #7c3aed)",
-              }}
-            >
-              S
-            </div>
+            <img
+            src={logo}
+            alt="Sprintly"
+            className="w-9 h-9 rounded-xl shrink-0"
+          />
             <span
               className="font-bold"
               style={{
