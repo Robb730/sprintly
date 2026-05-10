@@ -24,9 +24,11 @@ export function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
 }
 
-export function isOverdue(dateStr) {
-  if (!dateStr) return false
-  return new Date(dateStr) < new Date()
+export function isOverdue(due_date) {
+  if (!due_date) return false
+  const due = new Date(due_date)
+  due.setHours(23, 59, 59, 999)          // treat due date as end of that day
+  return due < new Date()
 }
 
 export const PRIORITY_META = {

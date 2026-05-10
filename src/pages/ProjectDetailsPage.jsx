@@ -60,7 +60,13 @@ import { supabase } from "../lib/supabase.js";
 // ─── Sprint selector ──────────────────────────────────────────────────────────
 // ─── Sprint selector bar ──────────────────────────────────────────────────────
 // ─── Sprint selector bar ──────────────────────────────────────────────────────
-function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilterChange }) {
+function SprintSelectorBar({
+  sprints,
+  selected,
+  onChange,
+  taskFilter,
+  onTaskFilterChange,
+}) {
   const now = new Date();
 
   function getSprintStatus(s) {
@@ -72,46 +78,101 @@ function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilt
   }
 
   const statusMeta = {
-    active:    { dotColor: "#22c55e", label: "Active",   pillBg: "rgba(34,197,94,0.12)",  pillColor: "#15803d" },
-    upcoming:  { dotColor: "#f59e0b", label: "Upcoming", pillBg: "rgba(245,158,11,0.12)", pillColor: "#92400e" },
-    completed: { dotColor: "#94a3b8", label: "Done",     pillBg: "var(--bg-primary)",      pillColor: "var(--text-muted)" },
+    active: {
+      dotColor: "#22c55e",
+      label: "Active",
+      pillBg: "rgba(34,197,94,0.12)",
+      pillColor: "#15803d",
+    },
+    upcoming: {
+      dotColor: "#f59e0b",
+      label: "Upcoming",
+      pillBg: "rgba(245,158,11,0.12)",
+      pillColor: "#92400e",
+    },
+    completed: {
+      dotColor: "#94a3b8",
+      label: "Done",
+      pillBg: "var(--bg-primary)",
+      pillColor: "var(--text-muted)",
+    },
   };
 
   const pillBase = {
-    display: "inline-flex", alignItems: "center", gap: 5,
-    padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500,
-    border: "0.5px solid transparent", cursor: "pointer",
-    transition: "all 0.15s", whiteSpace: "nowrap", background: "transparent",
-    color: "var(--text-secondary)", flexShrink: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "4px 10px",
+    borderRadius: 20,
+    fontSize: 11,
+    fontWeight: 500,
+    border: "0.5px solid transparent",
+    cursor: "pointer",
+    transition: "all 0.15s",
+    whiteSpace: "nowrap",
+    background: "transparent",
+    color: "var(--text-secondary)",
+    flexShrink: 0,
   };
 
   const sprintPillBase = {
-    display: "inline-flex", alignItems: "center", gap: 5,
-    padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500,
-    border: "1px solid var(--border)", cursor: "pointer",
-    background: "var(--bg-card)", color: "var(--text-secondary)",
-    transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "4px 10px",
+    borderRadius: 20,
+    fontSize: 11,
+    fontWeight: 500,
+    border: "1px solid var(--border)",
+    cursor: "pointer",
+    background: "var(--bg-card)",
+    color: "var(--text-secondary)",
+    transition: "all 0.15s",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   };
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 0,
-      background: "var(--bg-secondary)",
-      border: "1px solid var(--border)",
-      borderRadius: 14, overflow: "hidden",
-    }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0,
+        background: "var(--bg-secondary)",
+        border: "1px solid var(--border)",
+        borderRadius: 14,
+        overflow: "hidden",
+      }}
+    >
       {/* All tasks — fixed left, never scrolls */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "6px 10px",
+          flexShrink: 0,
+        }}
+      >
         <button
           onClick={() => onChange("all")}
           style={{
             ...pillBase,
             background: selected === "all" ? "var(--accent)" : "transparent",
             color: selected === "all" ? "#fff" : "var(--text-secondary)",
-            border: selected === "all" ? "0.5px solid var(--accent)" : "0.5px solid transparent",
+            border:
+              selected === "all"
+                ? "0.5px solid var(--accent)"
+                : "0.5px solid transparent",
           }}
-          onMouseEnter={(e) => { if (selected !== "all") e.currentTarget.style.background = "var(--bg-card)"; }}
-          onMouseLeave={(e) => { if (selected !== "all") e.currentTarget.style.background = "transparent"; }}
+          onMouseEnter={(e) => {
+            if (selected !== "all")
+              e.currentTarget.style.background = "var(--bg-card)";
+          }}
+          onMouseLeave={(e) => {
+            if (selected !== "all")
+              e.currentTarget.style.background = "transparent";
+          }}
         >
           <LayoutGrid size={11} />
           All tasks
@@ -119,22 +180,63 @@ function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilt
 
         {/* Vertical divider */}
         {sprints.length > 0 && (
-          <div style={{ width: 1, height: 18, background: "var(--border)", flexShrink: 0 }} />
+          <div
+            style={{
+              width: 1,
+              height: 18,
+              background: "var(--border)",
+              flexShrink: 0,
+            }}
+          />
         )}
       </div>
 
       {/* Scrollable sprint pills */}
       {sprints.length > 0 && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6,
-          overflowX: "auto", flex: 1, padding: "6px 4px",
-          scrollbarWidth: "none", // Firefox
-          msOverflowStyle: "none", // IE
-        }}
-        // Hide scrollbar in WebKit
-        ref={(el) => { if (el) el.style.setProperty("--scrollbar", "none"); }}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            overflowX: "auto",
+            flex: 1,
+            padding: "6px 4px",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            cursor: "grab",
+            userSelect: "none",
+          }}
+          ref={(el) => {
+            if (!el || el._scrollListenersAttached) return;
+            el._scrollListenersAttached = true;
+
+            let isDown = false,
+              startX,
+              scrollLeft;
+
+            el.addEventListener("mousedown", (e) => {
+              isDown = true;
+              el.style.cursor = "grabbing";
+              startX = e.pageX - el.offsetLeft;
+              scrollLeft = el.scrollLeft;
+            });
+            el.addEventListener("mouseleave", () => {
+              isDown = false;
+              el.style.cursor = "grab";
+            });
+            el.addEventListener("mouseup", () => {
+              isDown = false;
+              el.style.cursor = "grab";
+            });
+            el.addEventListener("mousemove", (e) => {
+              if (!isDown) return;
+              e.preventDefault();
+              const x = e.pageX - el.offsetLeft;
+              el.scrollLeft = scrollLeft - (x - startX) * 1.5;
+            });
+          }}
         >
-          <style>{`.sprint-scroll::-webkit-scrollbar { display: none; }`}</style>
+          <style>{`div::-webkit-scrollbar { display: none; }`}</style>
           {sprints.map((s) => {
             const status = getSprintStatus(s);
             const meta = statusMeta[status];
@@ -145,8 +247,12 @@ function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilt
                 onClick={() => onChange(s.id)}
                 style={{
                   ...sprintPillBase,
-                  background: isSelected ? "rgba(37,99,235,0.08)" : "var(--bg-card)",
-                  borderColor: isSelected ? "rgba(37,99,235,0.3)" : "var(--border)",
+                  background: isSelected
+                    ? "rgba(37,99,235,0.08)"
+                    : "var(--bg-card)",
+                  borderColor: isSelected
+                    ? "rgba(37,99,235,0.3)"
+                    : "var(--border)",
                   color: isSelected ? "var(--accent)" : "var(--text-secondary)",
                 }}
                 onMouseEnter={(e) => {
@@ -162,15 +268,27 @@ function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilt
                   }
                 }}
               >
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: meta.dotColor, display: "inline-block", flexShrink: 0,
-                }} />
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: meta.dotColor,
+                    display: "inline-block",
+                    flexShrink: 0,
+                  }}
+                />
                 {s.title}
-                <span style={{
-                  fontSize: 9, padding: "1px 5px", borderRadius: 10, fontWeight: 500,
-                  background: meta.pillBg, color: meta.pillColor,
-                }}>
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: "1px 5px",
+                    borderRadius: 10,
+                    fontWeight: 500,
+                    background: meta.pillBg,
+                    color: meta.pillColor,
+                  }}
+                >
                   {meta.label}
                 </span>
               </button>
@@ -180,23 +298,58 @@ function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilt
       )}
 
       {/* Right side: divider + Mine — fixed right, never scrolls */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", flexShrink: 0 }}>
-        <div style={{ width: 1, height: 18, background: "var(--border)", flexShrink: 0 }} />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "6px 10px",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            width: 1,
+            height: 18,
+            background: "var(--border)",
+            flexShrink: 0,
+          }}
+        />
         <button
-          onClick={() => onTaskFilterChange(taskFilter === "mine" ? "all" : "mine")}
+          onClick={() =>
+            onTaskFilterChange(taskFilter === "mine" ? "all" : "mine")
+          }
           style={{
             ...pillBase,
-            background: taskFilter === "mine" ? "rgba(34,197,94,0.1)" : "transparent",
+            background:
+              taskFilter === "mine" ? "rgba(34,197,94,0.1)" : "transparent",
             color: taskFilter === "mine" ? "#15803d" : "var(--text-secondary)",
-            border: taskFilter === "mine" ? "0.5px solid rgba(34,197,94,0.3)" : "0.5px solid transparent",
+            border:
+              taskFilter === "mine"
+                ? "0.5px solid rgba(34,197,94,0.3)"
+                : "0.5px solid transparent",
           }}
-          onMouseEnter={(e) => { if (taskFilter !== "mine") e.currentTarget.style.background = "var(--bg-card)"; }}
-          onMouseLeave={(e) => { if (taskFilter !== "mine") e.currentTarget.style.background = "transparent"; }}
+          onMouseEnter={(e) => {
+            if (taskFilter !== "mine")
+              e.currentTarget.style.background = "var(--bg-card)";
+          }}
+          onMouseLeave={(e) => {
+            if (taskFilter !== "mine")
+              e.currentTarget.style.background = "transparent";
+          }}
         >
           <User size={11} />
           Mine
           {taskFilter === "mine" && (
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: "#22c55e",
+                display: "inline-block",
+              }}
+            />
           )}
         </button>
       </div>
@@ -205,137 +358,153 @@ function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilt
 }
 
 // ─── Members panel ────────────────────────────────────────────────────────────
-function MembersPanel({
-  members,
-  isManager,
-  onInvite,
-  onPermissionChange,
-  onRemove,
-}) {
+function MembersPanel({ members, isManager, onInvite, onPermissionChange, onRemove }) {
   const [expanded, setExpanded] = useState(false);
-  return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        border: "1px solid var(--border)",
-        background: "var(--bg-card)",
-      }}
-    >
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-4 py-3 transition-colors"
-        style={{ borderBottom: expanded ? "1px solid var(--border)" : "none" }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.background = "var(--bg-primary)")
-        }
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className="text-xs font-semibold"
-            style={{
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-display)",
-            }}
-          >
-            Members
-          </span>
-          <span
-            className="text-xs px-1.5 py-0.5 rounded-md font-medium"
-            style={{
-              background: "var(--bg-primary)",
-              color: "var(--text-muted)",
-              fontSize: 10,
-            }}
-          >
-            {members.length}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex -space-x-1.5">
-            {members.slice(0, 3).map((m) => (
-              <div
-                key={m.id}
-                className="w-5 h-5 rounded-md border flex items-center justify-center text-white font-semibold"
-                style={{
-                  background: getAvatarColor(m.name),
-                  fontSize: 7,
-                  borderColor: "var(--bg-card)",
-                  zIndex: 1,
-                }}
-              >
-                {getInitials(m.name)}
-              </div>
-            ))}
-            {members.length > 3 && (
-              <div
-                className="w-5 h-5 rounded-md border flex items-center justify-center text-xs font-medium"
-                style={{
-                  background: "var(--bg-primary)",
-                  color: "var(--text-muted)",
-                  fontSize: 9,
-                  borderColor: "var(--bg-card)",
-                }}
-              >
-                +{members.length - 3}
-              </div>
-            )}
-          </div>
-          <span
-            style={{
-              color: "var(--text-muted)",
-              transform: expanded ? "rotate(180deg)" : "none",
-              transition: "transform 0.2s",
-            }}
-          >
-            {I.chevronDown}
-          </span>
-        </div>
-      </button>
 
-      {expanded && (
-        <div className="px-3 py-2 space-y-1">
-          {members.map((m) => (
+  function getPresence(last_seen_at) {
+    if (!last_seen_at) return "offline";
+    const diff = (Date.now() - new Date(last_seen_at).getTime()) / 1000;
+    if (diff < 60) return "online";       // seen in last 60s
+    if (diff < 300) return "away";        // seen in last 5min
+    return "offline";
+  }
+
+  const presenceMeta = {
+    online:  { color: "#22c55e", label: "Online" },
+    away:    { color: "#f59e0b", label: "Away" },
+    offline: { color: "#94a3b8", label: null },
+  };
+
+  function formatLastSeen(last_seen_at) {
+    if (!last_seen_at) return "Never";
+    const diff = Math.floor((Date.now() - new Date(last_seen_at).getTime()) / 1000);
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  }
+
+  return (
+  <div
+    className="rounded-2xl overflow-hidden"
+    style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}
+  >
+    <button
+      onClick={() => setExpanded((e) => !e)}
+      className="w-full flex items-center justify-between px-4 py-3 transition-colors"
+      style={{ borderBottom: expanded ? "1px solid var(--border)" : "none" }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-primary)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      <div className="flex items-center gap-2">
+  <span className="text-xs font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+    Members
+  </span>
+  <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 10 }}>
+    {members.length}
+  </span>
+</div>
+      <div className="flex items-center gap-2">
+        {/* Avatar stack */}
+        <div className="flex -space-x-1.5">
+          {members.slice(0, 3).map((m) => {
+            const presence = getPresence(m.last_seen_at);
+            return (
+              <div key={m.id} className="relative" style={{ zIndex: 1 }}>
+                <div
+                  className="w-5 h-5 rounded-md border flex items-center justify-center text-white font-semibold"
+                  style={{ background: getAvatarColor(m.name), fontSize: 7, borderColor: "var(--bg-card)" }}
+                >
+                  {getInitials(m.name)}
+                </div>
+                {presence !== "offline" && (
+                  <span style={{
+                    position: "absolute", bottom: -1, right: -1,
+                    width: 5, height: 5, borderRadius: "50%",
+                    background: presenceMeta[presence].color,
+                    border: "1.5px solid var(--bg-card)",
+                    display: "block",
+                  }} />
+                )}
+              </div>
+            );
+          })}
+          {members.length > 3 && (
+            <div className="w-5 h-5 rounded-md border flex items-center justify-center font-medium"
+              style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 9, borderColor: "var(--bg-card)", zIndex: 0 }}>
+              +{members.length - 3}
+            </div>
+          )}
+        </div>
+        <span style={{ color: "var(--text-muted)", transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+          {I.chevronDown}
+        </span>
+      </div>
+    </button>
+
+    {expanded && (
+      <div className="px-3 py-2 space-y-0.5">
+        {members.map((m) => {
+          const presence = getPresence(m.last_seen_at);
+          const pm = presenceMeta[presence];
+          return (
             <div
               key={m.id}
               className="flex items-center gap-2.5 px-2 py-2 rounded-xl"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "var(--bg-primary)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-primary)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-semibold shrink-0"
-                style={{ background: getAvatarColor(m.name), fontSize: 10 }}
-              >
-                {getInitials(m.name)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-xs font-semibold truncate"
-                  style={{ color: "var(--text-primary)" }}
+              {/* Avatar with conditional presence dot */}
+              <div className="relative shrink-0">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-semibold"
+                  style={{ background: getAvatarColor(m.name), fontSize: 10 }}
                 >
+                  {getInitials(m.name)}
+                </div>
+                {/* Only render dot if not offline */}
+                {presence !== "offline" ? (
+                  <span style={{
+                    position: "absolute", bottom: -1, right: -1,
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: pm.color,
+                    border: "1.5px solid var(--bg-card)",
+                    display: "block",
+                  }} />
+                ) : (
+                  <span style={{
+                    position: "absolute", bottom: -1, right: -1,
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: "var(--text-muted)",
+                    border: "1.5px solid var(--bg-card)",
+                    opacity: 0.35,
+                    display: "block",
+                  }} />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate" style={{ color: "var(--text-primary)" }}>
                   {m.name}
                 </p>
-                <p
-                  className="text-xs truncate"
-                  style={{ color: "var(--text-muted)", fontSize: 10 }}
-                >
-                  {m.email}
+                <p className="truncate" style={{
+                  fontSize: 10,
+                  color: presence === "online" ? "#16a34a" : presence === "away" ? "#b45309" : "var(--text-muted)",
+                }}>
+                  {presence === "online"
+                    ? "● Active now"
+                    : presence === "away"
+                    ? `◌ Away · ${formatLastSeen(m.last_seen_at)}`
+                    : !m.last_seen_at
+                    ? "Never visited"
+                    : `Last seen ${formatLastSeen(m.last_seen_at)}`}
                 </p>
               </div>
+
               <div className="flex items-center gap-1.5 shrink-0">
                 {m.role === "manager" && (
-                  <span
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium"
-                    style={{
-                      background: "rgba(37,99,235,0.1)",
-                      color: "var(--accent)",
-                      fontSize: 9,
-                    }}
-                  >
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium"
+                    style={{ background: "rgba(37,99,235,0.1)", color: "var(--accent)", fontSize: 9 }}>
                     <Crown size={11} /> PM
                   </span>
                 )}
@@ -343,42 +512,32 @@ function MembersPanel({
                   <button
                     onClick={() => onRemove(m)}
                     className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-70"
-                    style={{
-                      color: "#dc2626",
-                      background: "var(--bg-primary)",
-                    }}
+                    style={{ color: "#dc2626", background: "var(--bg-primary)" }}
                     title="Remove member"
                   >
-                    <UserMinus size={13} />{" "}
-                    {/* add UserMinus to your lucide imports */}
+                    <UserMinus size={13} />
                   </button>
                 )}
               </div>
             </div>
-          ))}
+          );
+        })}
 
-          {isManager && (
-            <button
-              onClick={onInvite}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all mt-1"
-              style={{
-                color: "var(--accent)",
-                border: "1px dashed var(--border)",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "var(--accent-light)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
-            >
-              {I.userPlus} Invite member
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
+        {isManager && (
+          <button
+            onClick={onInvite}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all mt-1"
+            style={{ color: "var(--accent)", border: "1px dashed var(--border)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-light)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            {I.userPlus} Invite member
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+);
 }
 
 // ─── Permission editor modal ──────────────────────────────────────────────────
@@ -1817,9 +1976,9 @@ export default function ProjectDetailsPage() {
         sprints (id, title, start_date, end_date, created_at),
         milestones (id, title, due_date, status, created_at),
         project_members (
-  role, permissions,
-  user:profiles_with_email!project_members_user_id_fkey (id, display_name, email)
-)
+          role, permissions, last_seen_at,
+          user:profiles_with_email!project_members_user_id_fkey (id, display_name, email)
+        )
       `,
         )
         .eq("id", id)
@@ -1851,6 +2010,7 @@ export default function ProjectDetailsPage() {
             email: m.user.email,
             role: m.role,
             permissions: m.permissions,
+            last_seen_at: m.last_seen_at,
           })),
         );
         setSprint((prev) => prev);
@@ -1859,26 +2019,44 @@ export default function ProjectDetailsPage() {
     fetchProject();
   }, [id, user]);
 
+  // Ping last_seen_at every 30s while user is on this project
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const ping = () => {
+      supabase
+        .from("project_members")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("project_id", id)
+        .eq("user_id", user.id)
+        .then(() => {});
+    };
+
+    ping(); // immediate on mount
+    const interval = setInterval(ping, 30_000);
+    return () => clearInterval(interval);
+  }, [id, user]);
+
   const handleTaskUpdate = async (taskId, updates) => {
-  const oldTask = tasks.find((t) => t.id === taskId);
-  await updateTask(
-    taskId,
-    {
-      title: updates.title,
-      description: updates.description,
-      status: updates.status,
-      priority: updates.priority,
-      assigned_to: updates.assigned_to,
-      assignees: updates.assignees,   // ← ADD THIS
-      due_date: updates.due_date,
-      sprint_id: updates.sprint_id,
-      milestone_id: updates.milestone_id,
-    },
-    user?.id,
-    oldTask,
-  );
-  showToast("success", "Task updated.");
-};
+    const oldTask = tasks.find((t) => t.id === taskId);
+    await updateTask(
+      taskId,
+      {
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        priority: updates.priority,
+        assigned_to: updates.assigned_to,
+        assignees: updates.assignees, // ← ADD THIS
+        due_date: updates.due_date,
+        sprint_id: updates.sprint_id,
+        milestone_id: updates.milestone_id,
+      },
+      user?.id,
+      oldTask,
+    );
+    showToast("success", "Task updated.");
+  };
 
   const handleCreateTask = async (taskData) => {
     try {
@@ -1991,12 +2169,15 @@ export default function ProjectDetailsPage() {
   const visibleTasks = tasks
     .filter((t) => sprint === "all" || t.sprint_id === sprint)
     .filter((t) => {
-  if (taskFilter === "all") return true;
-  const assignees = Array.isArray(t.assignees) && t.assignees.length > 0
-    ? t.assignees
-    : t.assigned_to ? [t.assigned_to] : [];
-  return assignees.includes(user?.id);
-});
+      if (taskFilter === "all") return true;
+      const assignees =
+        Array.isArray(t.assignees) && t.assignees.length > 0
+          ? t.assignees
+          : t.assigned_to
+            ? [t.assigned_to]
+            : [];
+      return assignees.includes(user?.id);
+    });
   const selectedSprintObj = project.sprints?.find((s) => s.id === sprint);
 
   // Derive live progress from tasks
@@ -2005,6 +2186,8 @@ export default function ProjectDetailsPage() {
         (tasks.filter((t) => t.status === "done").length / tasks.length) * 100,
       )
     : (project.progress ?? 0);
+
+  
 
   return (
     <div
@@ -2094,21 +2277,36 @@ export default function ProjectDetailsPage() {
 
             {/* Sprint selector + tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-  <div style={{ flex: 1, minWidth: 0 }}>
-    <SprintSelectorBar
-      sprints={project.sprints ?? []}
-      selected={sprint}
-      onChange={setSprint}
-      taskFilter={taskFilter}
-      onTaskFilterChange={setTaskFilter}
-    />
-  </div>
-  <div className="flex items-center gap-1 shrink-0">
-    <TabBtn icon={I.kanban} label="Kanban" active={tab === "kanban"} onClick={() => setTab("kanban")} />
-    <TabBtn icon={I.list}   label="List"   active={tab === "list"}   onClick={() => setTab("list")} />
-    <TabBtn icon={I.chart}  label="Overview" active={tab === "overview"} onClick={() => setTab("overview")} />
-  </div>
-</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SprintSelectorBar
+                  sprints={project.sprints ?? []}
+                  selected={sprint}
+                  onChange={setSprint}
+                  taskFilter={taskFilter}
+                  onTaskFilterChange={setTaskFilter}
+                />
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <TabBtn
+                  icon={I.kanban}
+                  label="Kanban"
+                  active={tab === "kanban"}
+                  onClick={() => setTab("kanban")}
+                />
+                <TabBtn
+                  icon={I.list}
+                  label="List"
+                  active={tab === "list"}
+                  onClick={() => setTab("list")}
+                />
+                <TabBtn
+                  icon={I.chart}
+                  label="Overview"
+                  active={tab === "overview"}
+                  onClick={() => setTab("overview")}
+                />
+              </div>
+            </div>
 
             {/* Sprint info strip */}
             {/* Sprint info strip */}

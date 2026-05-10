@@ -328,14 +328,15 @@ export default function MyTasksPage() {
     if (!user) return
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .select(`
-        *,
-        project:projects!tasks_project_id_fkey (id, title)
-      `)
-      .eq('assigned_to', user.id)
-      .order('created_at', { ascending: false })
+    // AFTER
+const { data, error } = await supabase
+  .from('tasks')
+  .select(`
+    *,
+    project:projects!tasks_project_id_fkey (id, title)
+  `)
+  .or(`assigned_to.eq.${user.id},assignees.cs.{"${user.id}"}`)
+  .order('due_date', { ascending: true, nullsFirst: false })
 
     if (!error) setTasks(data || [])
     setLoading(false)
@@ -382,11 +383,11 @@ export default function MyTasksPage() {
 
   // Group by project
   const grouped = filtered.reduce((acc, task) => {
-    const key = task.project_id
-    if (!acc[key]) acc[key] = { name: task.project?.title ?? 'Unknown', tasks: [] }
-    acc[key].tasks.push(task)
-    return acc
-  }, {})
+  const key = task.project_id
+  if (!acc[key]) acc[key] = { name: task.project?.title ?? 'Unknown', tasks: [] }
+  acc[key].tasks.push(task)
+  return acc
+}, {})
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
