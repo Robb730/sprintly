@@ -1990,7 +1990,13 @@ export default function ProjectDetailsPage() {
       false);
   const visibleTasks = tasks
     .filter((t) => sprint === "all" || t.sprint_id === sprint)
-    .filter((t) => taskFilter === "all" || t.assigned_to === user?.id);
+    .filter((t) => {
+  if (taskFilter === "all") return true;
+  const assignees = Array.isArray(t.assignees) && t.assignees.length > 0
+    ? t.assignees
+    : t.assigned_to ? [t.assigned_to] : [];
+  return assignees.includes(user?.id);
+});
   const selectedSprintObj = project.sprints?.find((s) => s.id === sprint);
 
   // Derive live progress from tasks
