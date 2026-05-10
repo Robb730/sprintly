@@ -4,6 +4,7 @@ import { logActivity } from '../lib/activity'
 
 const TASK_SELECT = `
   *,
+  assignees,
   assignee:profiles_with_email!tasks_assigned_to_fkey (id, display_name, email)
 `
 

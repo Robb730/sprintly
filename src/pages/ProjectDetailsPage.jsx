@@ -26,6 +26,7 @@ import {
   Pencil,
   Trash2,
   ChevronRight,
+  Clock,
   Users,
   Calendar,
   Flag,
@@ -33,6 +34,8 @@ import {
   Tag,
   MessageSquare,
   Zap,
+  LayoutGrid,
+  CheckCircle2,
   Milestone,
   Check,
   Kanban,
@@ -55,45 +58,148 @@ import { LayoutList, Activity } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 
 // ─── Sprint selector ──────────────────────────────────────────────────────────
-function SprintSelector({ sprints, selected, onChange }) {
-  const statusColor = {
-    active: "#22c55e",
-    completed: "var(--text-muted)",
-    upcoming: "#f59e0b",
+// ─── Sprint selector bar ──────────────────────────────────────────────────────
+// ─── Sprint selector bar ──────────────────────────────────────────────────────
+function SprintSelectorBar({ sprints, selected, onChange, taskFilter, onTaskFilterChange }) {
+  const now = new Date();
+
+  function getSprintStatus(s) {
+    const start = new Date(s.start_date);
+    const end = new Date(s.end_date);
+    if (now < start) return "upcoming";
+    if (now > end) return "completed";
+    return "active";
+  }
+
+  const statusMeta = {
+    active:    { dotColor: "#22c55e", label: "Active",   pillBg: "rgba(34,197,94,0.12)",  pillColor: "#15803d" },
+    upcoming:  { dotColor: "#f59e0b", label: "Upcoming", pillBg: "rgba(245,158,11,0.12)", pillColor: "#92400e" },
+    completed: { dotColor: "#94a3b8", label: "Done",     pillBg: "var(--bg-primary)",      pillColor: "var(--text-muted)" },
   };
+
+  const pillBase = {
+    display: "inline-flex", alignItems: "center", gap: 5,
+    padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500,
+    border: "0.5px solid transparent", cursor: "pointer",
+    transition: "all 0.15s", whiteSpace: "nowrap", background: "transparent",
+    color: "var(--text-secondary)", flexShrink: 0,
+  };
+
+  const sprintPillBase = {
+    display: "inline-flex", alignItems: "center", gap: 5,
+    padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500,
+    border: "1px solid var(--border)", cursor: "pointer",
+    background: "var(--bg-card)", color: "var(--text-secondary)",
+    transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
+  };
+
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      <button
-        onClick={() => onChange("all")}
-        className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-        style={{
-          background: selected === "all" ? "var(--accent)" : "var(--bg-card)",
-          color: selected === "all" ? "#fff" : "var(--text-secondary)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        All Tasks
-      </button>
-      {sprints.map((s) => (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 0,
+      background: "var(--bg-secondary)",
+      border: "1px solid var(--border)",
+      borderRadius: 14, overflow: "hidden",
+    }}>
+      {/* All tasks — fixed left, never scrolls */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", flexShrink: 0 }}>
         <button
-          key={s.id}
-          onClick={() => onChange(s.id)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+          onClick={() => onChange("all")}
           style={{
-            background:
-              selected === s.id ? "var(--accent-light)" : "var(--bg-card)",
-            color:
-              selected === s.id ? "var(--accent)" : "var(--text-secondary)",
-            border: `1px solid ${selected === s.id ? "var(--accent)" : "var(--border)"}`,
+            ...pillBase,
+            background: selected === "all" ? "var(--accent)" : "transparent",
+            color: selected === "all" ? "#fff" : "var(--text-secondary)",
+            border: selected === "all" ? "0.5px solid var(--accent)" : "0.5px solid transparent",
           }}
+          onMouseEnter={(e) => { if (selected !== "all") e.currentTarget.style.background = "var(--bg-card)"; }}
+          onMouseLeave={(e) => { if (selected !== "all") e.currentTarget.style.background = "transparent"; }}
         >
-          <span
-            className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ background: statusColor[s.status] }}
-          />
-          {s.title}
+          <LayoutGrid size={11} />
+          All tasks
         </button>
-      ))}
+
+        {/* Vertical divider */}
+        {sprints.length > 0 && (
+          <div style={{ width: 1, height: 18, background: "var(--border)", flexShrink: 0 }} />
+        )}
+      </div>
+
+      {/* Scrollable sprint pills */}
+      {sprints.length > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          overflowX: "auto", flex: 1, padding: "6px 4px",
+          scrollbarWidth: "none", // Firefox
+          msOverflowStyle: "none", // IE
+        }}
+        // Hide scrollbar in WebKit
+        ref={(el) => { if (el) el.style.setProperty("--scrollbar", "none"); }}
+        >
+          <style>{`.sprint-scroll::-webkit-scrollbar { display: none; }`}</style>
+          {sprints.map((s) => {
+            const status = getSprintStatus(s);
+            const meta = statusMeta[status];
+            const isSelected = selected === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => onChange(s.id)}
+                style={{
+                  ...sprintPillBase,
+                  background: isSelected ? "rgba(37,99,235,0.08)" : "var(--bg-card)",
+                  borderColor: isSelected ? "rgba(37,99,235,0.3)" : "var(--border)",
+                  color: isSelected ? "var(--accent)" : "var(--text-secondary)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = "rgba(37,99,235,0.25)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }
+                }}
+              >
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: meta.dotColor, display: "inline-block", flexShrink: 0,
+                }} />
+                {s.title}
+                <span style={{
+                  fontSize: 9, padding: "1px 5px", borderRadius: 10, fontWeight: 500,
+                  background: meta.pillBg, color: meta.pillColor,
+                }}>
+                  {meta.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Right side: divider + Mine — fixed right, never scrolls */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", flexShrink: 0 }}>
+        <div style={{ width: 1, height: 18, background: "var(--border)", flexShrink: 0 }} />
+        <button
+          onClick={() => onTaskFilterChange(taskFilter === "mine" ? "all" : "mine")}
+          style={{
+            ...pillBase,
+            background: taskFilter === "mine" ? "rgba(34,197,94,0.1)" : "transparent",
+            color: taskFilter === "mine" ? "#15803d" : "var(--text-secondary)",
+            border: taskFilter === "mine" ? "0.5px solid rgba(34,197,94,0.3)" : "0.5px solid transparent",
+          }}
+          onMouseEnter={(e) => { if (taskFilter !== "mine") e.currentTarget.style.background = "var(--bg-card)"; }}
+          onMouseLeave={(e) => { if (taskFilter !== "mine") e.currentTarget.style.background = "transparent"; }}
+        >
+          <User size={11} />
+          Mine
+          {taskFilter === "mine" && (
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
@@ -1747,31 +1853,32 @@ export default function ProjectDetailsPage() {
             permissions: m.permissions,
           })),
         );
-        setSprint("all");
+        setSprint((prev) => prev);
       }
     }
     fetchProject();
   }, [id, user]);
 
   const handleTaskUpdate = async (taskId, updates) => {
-    const oldTask = tasks.find((t) => t.id === taskId);
-    await updateTask(
-      taskId,
-      {
-        title: updates.title,
-        description: updates.description,
-        status: updates.status,
-        priority: updates.priority,
-        assigned_to: updates.assigned_to,
-        due_date: updates.due_date,
-        sprint_id: updates.sprint_id,
-        milestone_id: updates.milestone_id,
-      },
-      user?.id,
-      oldTask,
-    );
-    showToast("success", "Task updated.");
-  };
+  const oldTask = tasks.find((t) => t.id === taskId);
+  await updateTask(
+    taskId,
+    {
+      title: updates.title,
+      description: updates.description,
+      status: updates.status,
+      priority: updates.priority,
+      assigned_to: updates.assigned_to,
+      assignees: updates.assignees,   // ← ADD THIS
+      due_date: updates.due_date,
+      sprint_id: updates.sprint_id,
+      milestone_id: updates.milestone_id,
+    },
+    user?.id,
+    oldTask,
+  );
+  showToast("success", "Task updated.");
+};
 
   const handleCreateTask = async (taskData) => {
     try {
@@ -1859,9 +1966,9 @@ export default function ProjectDetailsPage() {
   // Loading / not found states
 
   if (notFound) {
-  navigate("/projects", { replace: true });
-  return null;
-}
+    navigate("/projects", { replace: true });
+    return null;
+  }
 
   if (!project) {
     return (
@@ -1956,8 +2063,6 @@ export default function ProjectDetailsPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-              
-
                 {isManager && (
                   <Button
                     variant="secondary"
@@ -1983,101 +2088,79 @@ export default function ProjectDetailsPage() {
 
             {/* Sprint selector + tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <SprintSelector
-                  sprints={project.sprints ?? []}
-                  selected={sprint}
-                  onChange={setSprint}
-                />
-                {/* My Tasks toggle */}
-                <button
-                  onClick={() =>
-                    setTaskFilter((f) => (f === "mine" ? "all" : "mine"))
-                  }
-                  className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                  style={{
-                    background:
-                      taskFilter === "mine"
-                        ? "rgba(37,99,235,0.12)"
-                        : "var(--bg-card)",
-                    color:
-                      taskFilter === "mine"
-                        ? "var(--accent)"
-                        : "var(--text-secondary)",
-                    border: `1px solid ${taskFilter === "mine" ? "var(--accent)" : "var(--border)"}`,
-                  }}
-                >
-                  {taskFilter === "mine" ? "👤 My Tasks" : "👤 My Tasks"}
-                </button>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <TabBtn
-                  icon={I.kanban}
-                  label="Kanban"
-                  active={tab === "kanban"}
-                  onClick={() => setTab("kanban")}
-                />
-                <TabBtn
-                  icon={I.list}
-                  label="List"
-                  active={tab === "list"}
-                  onClick={() => setTab("list")}
-                />
-                <TabBtn
-                  icon={I.chart}
-                  label="Overview"
-                  active={tab === "overview"}
-                  onClick={() => setTab("overview")}
-                />
-              </div>
-            </div>
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <SprintSelectorBar
+      sprints={project.sprints ?? []}
+      selected={sprint}
+      onChange={setSprint}
+      taskFilter={taskFilter}
+      onTaskFilterChange={setTaskFilter}
+    />
+  </div>
+  <div className="flex items-center gap-1 shrink-0">
+    <TabBtn icon={I.kanban} label="Kanban" active={tab === "kanban"} onClick={() => setTab("kanban")} />
+    <TabBtn icon={I.list}   label="List"   active={tab === "list"}   onClick={() => setTab("list")} />
+    <TabBtn icon={I.chart}  label="Overview" active={tab === "overview"} onClick={() => setTab("overview")} />
+  </div>
+</div>
 
             {/* Sprint info strip */}
-            {selectedSprintObj && sprint !== "all" && (
-              <div className="flex items-center gap-3 flex-wrap">
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {new Date(selectedSprintObj.start_date).toLocaleDateString(
-                    "en-PH",
-                    { month: "short", day: "numeric" },
-                  )}
-                  {" → "}
-                  {new Date(selectedSprintObj.end_date).toLocaleDateString(
-                    "en-PH",
-                    { month: "short", day: "numeric", year: "numeric" },
-                  )}
-                </span>
-                <span
-                  className="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
-                  style={{
-                    background:
-                      selectedSprintObj.status === "active"
-                        ? "rgba(34,197,94,0.1)"
-                        : selectedSprintObj.status === "upcoming"
-                          ? "rgba(245,158,11,0.1)"
-                          : "var(--bg-primary)",
-                    color:
-                      selectedSprintObj.status === "active"
-                        ? "#22c55e"
-                        : selectedSprintObj.status === "upcoming"
-                          ? "#f59e0b"
-                          : "var(--text-muted)",
-                    fontSize: 10,
-                  }}
-                >
-                  {selectedSprintObj.status}
-                </span>
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {visibleTasks.length} task
-                  {visibleTasks.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            )}
+            {/* Sprint info strip */}
+            {selectedSprintObj &&
+              sprint !== "all" &&
+              (() => {
+                const now = new Date();
+                const start = new Date(selectedSprintObj.start_date);
+                const end = new Date(selectedSprintObj.end_date);
+                const computedStatus =
+                  now < start ? "upcoming" : now > end ? "completed" : "active";
+                const statusStyles = {
+                  active: { bg: "rgba(34,197,94,0.1)", color: "#22c55e" },
+                  upcoming: { bg: "rgba(245,158,11,0.1)", color: "#f59e0b" },
+                  completed: {
+                    bg: "var(--bg-primary)",
+                    color: "var(--text-muted)",
+                  },
+                };
+                const ss = statusStyles[computedStatus];
+                return (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {new Date(
+                        selectedSprintObj.start_date,
+                      ).toLocaleDateString("en-PH", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                      {" → "}
+                      {new Date(selectedSprintObj.end_date).toLocaleDateString(
+                        "en-PH",
+                        { month: "short", day: "numeric", year: "numeric" },
+                      )}
+                    </span>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                      style={{
+                        background: ss.bg,
+                        color: ss.color,
+                        fontSize: 10,
+                      }}
+                    >
+                      {computedStatus}
+                    </span>
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {visibleTasks.length} task
+                      {visibleTasks.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                );
+              })()}
           </div>
 
           {/* Content area */}
@@ -2295,7 +2378,13 @@ export default function ProjectDetailsPage() {
                           {project.milestones?.length ?? 0} milestones
                         </div>
                         {isManager && (
-                          <div style={{ paddingTop: 4, borderTop: "1px solid var(--border)", marginTop: 4 }}>
+                          <div
+                            style={{
+                              paddingTop: 4,
+                              borderTop: "1px solid var(--border)",
+                              marginTop: 4,
+                            }}
+                          >
                             <button
                               onClick={() => setShowDeleteConfirm(true)}
                               className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-medium transition-all"
@@ -2305,12 +2394,16 @@ export default function ProjectDetailsPage() {
                                 background: "transparent",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "rgba(220,38,38,0.06)";
-                                e.currentTarget.style.borderColor = "rgba(220,38,38,0.4)";
+                                e.currentTarget.style.background =
+                                  "rgba(220,38,38,0.06)";
+                                e.currentTarget.style.borderColor =
+                                  "rgba(220,38,38,0.4)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "transparent";
-                                e.currentTarget.style.borderColor = "rgba(220,38,38,0.2)";
+                                e.currentTarget.style.background =
+                                  "transparent";
+                                e.currentTarget.style.borderColor =
+                                  "rgba(220,38,38,0.2)";
                               }}
                             >
                               <Trash2 size={12} />

@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { PRIORITY_META } from '../data/projectData.jsx'
 import Button from '../shared/Button'
 import I from '../shared/Icons'
+import AssigneePicker from "../shared/AssigneePicker.jsx";
 
 export default function CreateTaskModal({ onClose, onCreate, members, sprints = [], milestones = [], defaultSprintId = '' }) {
   const [form, setForm] = useState({
-    title:        '',
-    description:  '',
-    priority:     'medium',
-    assigned_to:  '',
-    due_date:     '',
-    sprint_id:    defaultSprintId || sprints.find(s => s.status === 'active')?.id || '',
-    milestone_id: '',
-  })
+  title:        "",
+  description:  "",
+  priority:     "medium",
+  assignees:    [],           // ← was: assigned_to: ''
+  due_date:     "",
+  sprint_id:    defaultSprintId || sprints.find((s) => s.status === "active")?.id || "",
+  milestone_id: "",
+});
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
 
@@ -24,7 +25,7 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
     setLoading(true)
 
     // Auto-status: needs both assignee AND due_date to be 'todo', otherwise backlog
-    const resolvedStatus = (form.assigned_to && form.due_date) ? 'todo' : 'backlog'
+    const resolvedStatus = (form.assignees.length > 0 && form.due_date) ? "todo" : "backlog";
 
     try {
       await onCreate?.({
@@ -32,7 +33,8 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
         description:  form.description.trim() || null,
         status:       resolvedStatus,
         priority:     form.priority,
-        assigned_to:  form.assigned_to  || null,
+        assigned_to:  form.assignees[0] || null,
+        assignees:    form.assignees,  
         due_date:     form.due_date     || null,
         sprint_id:    form.sprint_id    || null,
         milestone_id: form.milestone_id || null,
@@ -136,18 +138,12 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
           {/* Assignee + Sprint */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Assignee</label>
-              <select
-                value={form.assigned_to}
-                onChange={e => set('assigned_to', e.target.value)}
-                className={inputCls}
-                style={{ ...inputStyle, appearance: 'none' }}
-                onFocus={focusIn}
-                onBlur={focusOut}
-              >
-                <option value="">Unassigned</option>
-                {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Assignee/s</label>
+              <AssigneePicker
+    members={members}
+    selected={form.assignees}
+    onChange={(ids) => set("assignees", ids)}
+  />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Sprint</label>

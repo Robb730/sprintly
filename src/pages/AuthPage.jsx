@@ -277,7 +277,7 @@ export default function AuthPage() {
 
         <div className="px-8 py-4 text-center">
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            © 2025 Sprintly · Built with React + Supabase
+            © 2025 Sprintly
           </p>
         </div>
       </div>
