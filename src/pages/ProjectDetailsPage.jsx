@@ -2037,6 +2037,41 @@ export default function ProjectDetailsPage() {
     return () => clearInterval(interval);
   }, [id, user]);
 
+  useEffect(() => {
+  if (!id) return;
+
+  const channel = supabase
+    .channel(`presence-${id}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "project_members",
+        filter: `project_id=eq.${id}`,
+      },
+      (payload) => {
+        const { user_id, last_seen_at } = payload.new;
+        if (!user_id || !last_seen_at) return; // guard against empty payloads
+
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === user_id
+              ? { ...m, last_seen_at }
+              : m
+          )
+        );
+      }
+    )
+    .subscribe((status) => {
+      if (status === "CHANNEL_ERROR") {
+        console.warn("Realtime presence channel error — check replication is enabled for project_members");
+      }
+    });
+
+  return () => supabase.removeChannel(channel);
+}, [id]);
+
   const handleTaskUpdate = async (taskId, updates) => {
     const oldTask = tasks.find((t) => t.id === taskId);
     await updateTask(
