@@ -108,7 +108,10 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
             {filtered.map((task, i) => {
               const pri = PRIORITY_META[task.priority]
               const col = STATUS_MAP[task.status]
-              const assignee = members.find(m => m.id === task.assigned_to)
+              const assigneeIds = Array.isArray(task.assignees) && task.assignees.length > 0
+  ? task.assignees
+  : task.assigned_to ? [task.assigned_to] : []
+const assignees = assigneeIds.map(id => members.find(m => m.id === id)).filter(Boolean)
               const due = task.due_date
               const overdue = isOverdue(due) && task.status !== 'done'
               const isLast = i === filtered.length - 1
@@ -158,34 +161,39 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
                   </td>
 
                   {/* Assignee */}
-                  <td className="px-3 py-3">
-                    {assignee ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-white font-semibold shrink-0"
-                          style={{ background: getAvatarColor(assignee.name), fontSize: 8 }}>
-                          {getInitials(assignee.name)}
-                        </div>
-                        <span className="text-xs truncate max-w-[90px]" style={{ color: 'var(--text-secondary)' }}>
-                          {assignee.name.split(' ')[0]}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Unassigned</span>
-                    )}
-                  </td>
-
-                  {/* Due */}
-                  <td className="px-3 py-3">
-                    {due ? (
-                      <span className="flex items-center gap-1 text-xs"
-                        style={{ color: overdue ? 'var(--danger)' : 'var(--text-muted)', fontSize: 10 }}>
-                        {overdue && I.warn}
-                        {formatDate(due)}
-                      </span>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>—</span>
-                    )}
-                  </td>
+<td className="px-3 py-3">
+  {assignees.length > 0 ? (
+    <div className="flex items-center gap-2">
+      <div className="flex -space-x-1.5">
+        {assignees.slice(0, 3).map(a => (
+          <div
+            key={a.id}
+            className="w-5 h-5 rounded-md flex items-center justify-center text-white font-semibold shrink-0"
+            style={{ background: getAvatarColor(a.name), fontSize: 8, outline: '2px solid var(--bg-card)' }}
+            title={a.name}
+          >
+            {getInitials(a.name)}
+          </div>
+        ))}
+        {assignees.length > 3 && (
+          <div
+            className="w-5 h-5 rounded-md flex items-center justify-center font-semibold shrink-0"
+            style={{ background: 'var(--bg-primary)', color: 'var(--text-muted)', fontSize: 8, outline: '2px solid var(--bg-card)' }}
+          >
+            +{assignees.length - 3}
+          </div>
+        )}
+      </div>
+      {assignees.length === 1 && (
+        <span className="text-xs truncate max-w-[70px]" style={{ color: 'var(--text-secondary)' }}>
+          {assignees[0].name.split(' ')[0]}
+        </span>
+      )}
+    </div>
+  ) : (
+    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Unassigned</span>
+  )}
+</td>
 
                   {/* Actions */}
                   <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
