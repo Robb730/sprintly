@@ -1,49 +1,71 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
+import { Crown, Pencil } from "lucide-react";
 
 const PRIORITY_COLORS = {
-  high:   { bg: 'rgba(220,38,38,0.08)',   text: '#ef4444', dot: '#ef4444' },
-  medium: { bg: 'rgba(245,158,11,0.08)',  text: '#f59e0b', dot: '#f59e0b' },
-  low:    { bg: 'rgba(34,197,94,0.08)',   text: '#22c55e', dot: '#22c55e' },
+  high: { bg: "rgba(220,38,38,0.08)", text: "#ef4444", dot: "#ef4444" },
+  medium: { bg: "rgba(245,158,11,0.08)", text: "#f59e0b", dot: "#f59e0b" },
+  low: { bg: "rgba(34,197,94,0.08)", text: "#22c55e", dot: "#22c55e" },
+};
+
+const CARD_ACCENTS = [
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#10b981",
+  "#f59e0b",
+  "#06b6d4",
+];
+
+function getAccent(title = "") {
+  return CARD_ACCENTS[title.charCodeAt(0) % CARD_ACCENTS.length];
 }
 
-const CARD_ACCENTS = ['#3b82f6','#8b5cf6','#ec4899','#10b981','#f59e0b','#06b6d4']
-
-function getAccent(title = '') {
-  return CARD_ACCENTS[title.charCodeAt(0) % CARD_ACCENTS.length]
-}
-
-function getInitials(name = '') {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export default function ProjectCard({ project }) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     id,
-    title = 'Untitled Project',
-    description = '',
-    progress = 0,
+    title = "Untitled Project",
+    description = "",
     task_count = 0,
     completed_tasks = 0,
     members = [],
     due_date,
-    role = 'contributor',
+    role = "contributor",
     sprint_count = 0,
-  } = project
+  } = project;
 
-  const accent = getAccent(title)
-  const isOverdue = due_date && new Date(due_date) < new Date()
+  // FIX 1: Compute progress from task counts (same as Dashboard's SprintCard)
+  // instead of relying on the raw `progress` field which may be stale/missing
+  const progress = task_count > 0
+    ? Math.round((completed_tasks / task_count) * 100)
+    : 0;
+
+  const accent = getAccent(title);
+  const isOverdue = due_date && new Date(due_date) < new Date();
   const dueDateLabel = due_date
-    ? new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(due_date))
-    : null
+    ? new Intl.DateTimeFormat("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(new Date(due_date))
+    : null;
 
   return (
     <div
       onClick={() => navigate(`/projects/${id}`)}
       className="group rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
       }}
     >
       {/* Color accent bar */}
@@ -55,34 +77,61 @@ export default function ProjectCard({ project }) {
           <div className="flex-1 min-w-0">
             <h3
               className="font-semibold text-base truncate mb-0.5 group-hover:text-[var(--accent)] transition-colors"
-              style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--text-primary)",
+              }}
             >
               {title}
             </h3>
-            <p className="text-xs line-clamp-2" style={{ color: 'var(--text-muted)' }}>
-              {description || 'No description provided.'}
+            <p
+              className="text-xs line-clamp-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {description || "No description provided."}
             </p>
           </div>
-          {/* Role badge */}
+
+          {/* Role badge — FIX 2: `flex items-center` (was invalid `flex flex-items-center`) */}
           <span
-            className="ml-3 shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+            className="ml-3 shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize flex items-center gap-1"
             style={{
-              background: role === 'manager' ? 'rgba(37,99,235,0.1)' : 'var(--bg-primary)',
-              color: role === 'manager' ? 'var(--accent)' : 'var(--text-muted)',
-              border: `1px solid ${role === 'manager' ? 'rgba(37,99,235,0.2)' : 'var(--border)'}`,
+              background:
+                role === "manager"
+                  ? "rgba(37,99,235,0.1)"
+                  : "var(--bg-primary)",
+              color: role === "manager" ? "var(--accent)" : "var(--text-muted)",
+              border: `1px solid ${role === "manager" ? "rgba(37,99,235,0.2)" : "var(--border)"}`,
             }}
           >
-            {role === 'manager' ? '👑 PM' : '✏️ Contributor'}
+            {role === "manager" ? (
+              <>
+                <Crown className="w-3 h-3" />
+                <span>PM</span>
+              </>
+            ) : (
+              <Pencil className="w-3 h-3" />
+            )}
           </span>
         </div>
 
         {/* Progress bar */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Progress</span>
-            <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{progress}%</span>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Progress
+            </span>
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {progress}%
+            </span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+          <div
+            className="h-1.5 rounded-full overflow-hidden"
+            style={{ background: "var(--bg-primary)" }}
+          >
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${progress}%`, background: accent }}
@@ -91,19 +140,42 @@ export default function ProjectCard({ project }) {
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <div
+          className="flex items-center gap-4 mb-4 text-xs"
+          style={{ color: "var(--text-muted)" }}
+        >
           <span className="flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 11 12 14 22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
             </svg>
             {completed_tasks}/{task_count} tasks
           </span>
           {sprint_count > 0 && (
             <span className="flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
               </svg>
-              {sprint_count} sprint{sprint_count !== 1 ? 's' : ''}
+              {sprint_count} sprint{sprint_count !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -117,19 +189,23 @@ export default function ProjectCard({ project }) {
                 key={i}
                 className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-white text-xs font-bold"
                 style={{
-                  borderColor: 'var(--bg-card)',
-                  background: `hsl(${(m.name?.charCodeAt(0) || i) * 47 % 360}, 60%, 50%)`,
+                  borderColor: "var(--bg-card)",
+                  background: `hsl(${((m.name?.charCodeAt(0) || i) * 47) % 360}, 60%, 50%)`,
                   zIndex: 10 - i,
                 }}
                 title={m.name}
               >
-                {getInitials(m.name || '?')}
+                {getInitials(m.name || "?")}
               </div>
             ))}
             {members.length > 4 && (
               <div
                 className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-semibold"
-                style={{ borderColor: 'var(--bg-card)', background: 'var(--bg-primary)', color: 'var(--text-muted)' }}
+                style={{
+                  borderColor: "var(--bg-card)",
+                  background: "var(--bg-primary)",
+                  color: "var(--text-muted)",
+                }}
               >
                 +{members.length - 4}
               </div>
@@ -141,15 +217,18 @@ export default function ProjectCard({ project }) {
             <span
               className="text-xs px-2 py-0.5 rounded-full"
               style={{
-                background: isOverdue ? 'rgba(220,38,38,0.08)' : 'var(--bg-primary)',
-                color: isOverdue ? 'var(--danger)' : 'var(--text-muted)',
+                background: isOverdue
+                  ? "rgba(220,38,38,0.08)"
+                  : "var(--bg-primary)",
+                color: isOverdue ? "var(--danger)" : "var(--text-muted)",
               }}
             >
-              {isOverdue ? '⚠ ' : ''}{dueDateLabel}
+              {isOverdue ? "⚠ " : ""}
+              {dueDateLabel}
             </span>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
