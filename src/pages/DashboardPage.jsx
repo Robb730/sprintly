@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Sidebar from '../components/layout/Sidebar'
 import Navbar from '../components/layout/Navbar'
-import Toast from '../components/shared/Toast'
+import { useToast } from '../hooks/useToast'
 import { useProjects } from '../hooks/useProjects'
 import { supabase } from '../lib/supabase'
 import {
-  Folder, CheckCheck, TrendingUp, Zap, Calendar, ArrowRight,
+  Folder, CheckCheck, Zap, ArrowRight,
   AlertTriangle, Clock, Activity, Timer, Circle, CircleCheck,
   ChevronRight, Flag, Layers
 } from 'lucide-react'
@@ -181,7 +181,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [toast, setToast] = useState(null)
+  const { show: showToast } = useToast()
   const [myTasks, setMyTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const { projects = [] } = useProjects(user?.id)
@@ -221,12 +221,17 @@ export default function DashboardPage() {
   const totalSprints = projects.reduce((a, p) => a + (p.sprint_count || 0), 0)
 
   // Tasks with no due date or due today or overdue → "needs attention"
+  const overdueTasks = myTasks.filter(t => t.due_date && isOverdueDate(t.due_date))
   const overdueOrToday = myTasks.filter(t => {
     if (!t.due_date) return false
     const due = new Date(t.due_date)
     const daysLeft = Math.ceil((due - now) / 86400000)
     return daysLeft <= 0
   })
+
+  function isOverdueDate(d) {
+    const due = new Date(d); due.setHours(23,59,59,999); return due < now
+  }
 
   // No due date tasks
   const noDueDateTasks = myTasks.filter(t => !t.due_date).slice(0, 3)
@@ -265,8 +270,8 @@ export default function DashboardPage() {
             {/* Stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard icon={<Folder size={20} />}      label="Total Projects"    value={projects.length}   sub={`${projects.filter(p => p.role === 'manager').length} as PM`} accent="#3b82f6" delay={0}   />
-              <StatCard icon={<CheckCheck size={20} />}  label="Tasks Completed"   value={completedAll}      sub={`of ${totalTasks} total`}                                     accent="#22c55e" delay={60}  />
-              <StatCard icon={<TrendingUp size={20} />}  label="Overall Progress"  value={`${overallPct}%`}  sub="across all projects"                                          accent="#8b5cf6" delay={120} />
+              <StatCard icon={<CheckCheck size={20} />}  label="Tasks Completed"   value={completedAll}      sub={`${overallPct}% overall · of ${totalTasks}`}                   accent="#22c55e" delay={60}  />
+              <StatCard icon={<AlertTriangle size={20} />} label="Overdue Tasks"    value={overdueTasks.length} sub={overdueTasks.length > 0 ? 'Needs attention' : 'All on track'} accent={overdueTasks.length > 0 ? '#ef4444' : '#22c55e'} delay={120} />
               <StatCard icon={<Zap size={20} />}         label="Active Sprints"    value={totalSprints}      sub="ongoing iterations"                                           accent="#f59e0b" delay={180} />
             </div>
 
@@ -402,7 +407,7 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      {/* toasts handled globally */}
     </div>
   )
 }

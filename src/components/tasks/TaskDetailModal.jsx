@@ -9,6 +9,7 @@ import {
 } from "../data/projectData";
 import Button from "../shared/Button";
 import I from "../shared/Icons";
+import { useToast } from "../../hooks/useToast.js";
 import CommentsSection from "./CommentSection";
 import AssigneePicker from "../shared/AssigneePicker";
 
@@ -41,6 +42,7 @@ export default function TaskDetailModal({
     tags: Array.isArray(task.tags) ? task.tags.join(", ") : task.tags || "",
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { show: showToast } = useToast();
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
   const [localTask, setLocalTask] = useState(task);
@@ -83,13 +85,13 @@ export default function TaskDetailModal({
       }));
       setCurrentAssignees(form.assignees);
       setEditing(false);
-    } catch (err) {
+     } catch (err) {
       console.error("Failed to save task:", err);
-      alert(err.message);
+      showToast("error", err.message)
     }
   };
 
-  const assignee = members.find((m) => m.id === localTask.assigned_to);
+
   const sprint = sprints.find((s) => s.id === localTask.sprint_id);
   const milestone = milestones.find((m) => m.id === localTask.milestone_id);
   const pri = PRIORITY_META[localTask.priority];
@@ -107,8 +109,11 @@ export default function TaskDetailModal({
   const focusOut = (e) => (e.target.style.borderColor = "var(--border)");
 
   useEffect(() => {
-  if (!editing) setLocalTask(task)
-}, [task])
+    if (!editing) {
+      const t = setTimeout(() => setLocalTask(task), 0)
+      return () => clearTimeout(t)
+    }
+  }, [task, editing])
 
   return (
     <div

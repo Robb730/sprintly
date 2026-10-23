@@ -32,7 +32,7 @@ export default function TaskCard({ task, members, onClick }) {
       )}
 
       {/* Title */}
-      <p className="text-xs font-semibold leading-snug mb-2.5"
+      <p className="text-xs font-semibold leading-snug mb-2.5 break-words"
         style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
         {task.title}
       </p>

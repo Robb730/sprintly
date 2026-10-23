@@ -9,38 +9,23 @@ import OverviewTab from "../components/tasks/OverviewTab.jsx";
 import TaskDetailModal from "../components/tasks/TaskDetailModal.jsx";
 import CreateTaskModal from "../components/tasks/CreateTaskModal.jsx";
 import InviteMemberModal from "../components/projects/InviteMemberModal.jsx";
-import Toast from "../components/shared/Toast.jsx";
+
 import Button from "../components/shared/Button.jsx";
 import I from "../components/shared/Icons.jsx";
 import {
-  ArrowLeft,
   Plus,
   X as Close,
-  ChevronDown,
-  MoreHorizontal,
-  Search,
-  Filter,
-  Settings,
-  UserPlus,
-  Send,
   Pencil,
   Trash2,
   ChevronRight,
-  Clock,
   Users,
   Calendar,
-  Flag,
   User,
-  Tag,
-  MessageSquare,
   Zap,
   LayoutGrid,
   CheckCircle2,
   Milestone,
   Check,
-  Kanban,
-  List,
-  BarChart2,
   AlertTriangle,
   Crown,
   UserMinus,
@@ -56,6 +41,10 @@ import {
 import { useTasks } from "../hooks/useTasks.js";
 import { LayoutList, Activity } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
+import { useToast } from "../hooks/useToast.js";
+import InlineEdit from "../components/shared/InlineEdit.jsx";
+import ConfirmDialog from "../components/shared/ConfirmDialog.jsx";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts.js";
 
 // ─── Sprint selector ──────────────────────────────────────────────────────────
 // ─── Sprint selector bar ──────────────────────────────────────────────────────
@@ -358,11 +347,12 @@ function SprintSelectorBar({
 }
 
 // ─── Members panel ────────────────────────────────────────────────────────────
-function MembersPanel({ members, isManager, onInvite, onPermissionChange, onRemove }) {
+function MembersPanel({ members, isManager, onInvite, onRemove }) {
   const [expanded, setExpanded] = useState(false);
 
   function getPresence(last_seen_at) {
     if (!last_seen_at) return "offline";
+    // eslint-disable-next-line react-hooks/purity
     const diff = (Date.now() - new Date(last_seen_at).getTime()) / 1000;
     if (diff < 60) return "online";       // seen in last 60s
     if (diff < 300) return "away";        // seen in last 5min
@@ -377,6 +367,7 @@ function MembersPanel({ members, isManager, onInvite, onPermissionChange, onRemo
 
   function formatLastSeen(last_seen_at) {
     if (!last_seen_at) return "Never";
+    // eslint-disable-next-line react-hooks/purity
     const diff = Math.floor((Date.now() - new Date(last_seen_at).getTime()) / 1000);
     if (diff < 60) return "Just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -1080,11 +1071,9 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
 // ─── All Sprints Modal ────────────────────────────────────────────────────────
 function AllSprintsModal({
   sprints,
-  projectId,
   isManager,
   onClose,
   onDelete,
-  onSprintsChange,
 }) {
   const now = new Date();
 
@@ -1932,7 +1921,6 @@ export default function ProjectDetailsPage() {
   const navigate = useNavigate();
   const {
     tasks,
-    loading: tasksLoading,
     createTask,
     updateTask,
     updateTaskStatusOptimistic,
@@ -1947,20 +1935,34 @@ export default function ProjectDetailsPage() {
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [tab, setTab] = useState("kanban");
+  const [kanbanGroupBy, setKanbanGroupBy] = useState("none");
+
+  useKeyboardShortcuts({
+    n: () => { if (canAddTasks) setCreateStatus("todo") },
+    escape: () => { setSelectedTask(null); setCreateStatus(null); setShowInvite(false); setPermsMember(null) },
+  });
   const [sprint, setSprint] = useState("all");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [toast, setToast] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [createStatus, setCreateStatus] = useState(null);
   const [showInvite, setShowInvite] = useState(false);
   const [permsMember, setPermsMember] = useState(null);
 
+  const { show: showToast } = useToast();
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
-  const showToast = (type, msg) => {
-    setToast({ type, message: msg });
-    setTimeout(() => setToast(null), 4000);
-  };
+  const [showMarkAllDoneConfirm, setShowMarkAllDoneConfirm] = useState(false);
+
+  const handleMarkAllDone = async () => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status: "done" })
+      .eq("project_id", id)
+      .neq("status", "done")
+    if (error) { showToast("error", error.message); return }
+    showToast("success", "All tasks marked as done")
+    window.location.reload()
+  }
 
   const [notFound, setNotFound] = useState(false);
 
@@ -2258,12 +2260,29 @@ export default function ProjectDetailsPage() {
                   <span className="hidden sm:inline">Projects</span>
                 </button>
                 <span style={{ color: "var(--border)" }}>/</span>
-                <span
-                  className="text-xs font-semibold truncate max-w-[160px] sm:max-w-xs"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {project.title}
-                </span>
+                {isManager ? (
+                  <InlineEdit
+                    value={project.title}
+                    onSave={async (newTitle) => {
+                      if (!newTitle.trim()) return
+                      const { error } = await supabase
+                        .from("projects")
+                        .update({ title: newTitle.trim() })
+                        .eq("id", id)
+                      if (error) { showToast("error", error.message); return }
+                      setProject((p) => ({ ...p, title: newTitle.trim() }))
+                      showToast("success", "Project renamed")
+                    }}
+                    className="text-xs font-semibold truncate max-w-[160px] sm:max-w-xs"
+                  />
+                ) : (
+                  <span
+                    className="text-xs font-semibold truncate max-w-[160px] sm:max-w-xs"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {project.title}
+                  </span>
+                )}
                 <span
                   className="flex items-center gap-1 px-1.5 py-0.5 rounded-md font-medium hidden sm:inline-flex"
                   style={{
@@ -2307,6 +2326,16 @@ export default function ProjectDetailsPage() {
                     <span className="hidden sm:inline">Add Task</span>
                   </Button>
                 )}
+                {isManager && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowMarkAllDoneConfirm(true)}
+                  >
+                    <CheckCircle2 size={14} />
+                    <span className="hidden sm:inline">Mark All Done</span>
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -2341,6 +2370,17 @@ export default function ProjectDetailsPage() {
                   onClick={() => setTab("overview")}
                 />
               </div>
+              {tab === "kanban" && (
+                <select
+                  value={kanbanGroupBy}
+                  onChange={(e) => setKanbanGroupBy(e.target.value)}
+                  className="text-xs px-2 py-1.5 rounded-xl"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  <option value="none">No grouping</option>
+                  <option value="assignee">Group by assignee</option>
+                </select>
+              )}
             </div>
 
             {/* Sprint info strip */}
@@ -2418,6 +2458,7 @@ export default function ProjectDetailsPage() {
                     updateTaskStatusOptimistic(taskId, newStatus, user?.id)
                   }
                   onDragError={(msg) => showToast("error", msg)}
+                  groupBy={kanbanGroupBy}
                 />
               )}
               {tab === "list" && (
@@ -2427,6 +2468,18 @@ export default function ProjectDetailsPage() {
                   onTaskClick={setSelectedTask}
                   onAddTask={(status) => setCreateStatus(status)}
                   canAddTasks={!!canAddTasks}
+                  onBulkStatusChange={async (ids, status) => {
+                    for (const id of ids) {
+                      await updateTaskStatusOptimistic(id, status, user?.id)
+                    }
+                    showToast("success", `${ids.length} tasks updated`)
+                  }}
+                  onBulkDelete={async (ids) => {
+                    for (const id of ids) {
+                      await deleteTask(id)
+                    }
+                    showToast("success", `${ids.length} tasks deleted`)
+                  }}
                 />
               )}
               {tab === "overview" && (
@@ -2742,13 +2795,16 @@ export default function ProjectDetailsPage() {
           onSave={handlePermSave}
         />
       )}
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
+      <ConfirmDialog
+        open={showMarkAllDoneConfirm}
+        onClose={() => setShowMarkAllDoneConfirm(false)}
+        onConfirm={handleMarkAllDone}
+        title="Mark all tasks as done?"
+        message={`This will mark all ${tasks.filter(t => t.status !== "done").length} non-done tasks as done. This action can be undone by changing individual task statuses.`}
+        confirmLabel="Mark All Done"
+        danger
+      />
+      {/* Toasts handled by global ToastContainer */}
 
       {showDeleteConfirm && (
         <div

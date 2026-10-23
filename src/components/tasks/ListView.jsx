@@ -1,13 +1,33 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { PRIORITY_META, STATUS_COLUMNS, formatDate, isOverdue, getAvatarColor, getInitials } from '../data/projectData.jsx'
 import I from '../shared/Icons'
+import BulkActionBar from '../shared/BulkActionBar'
+import { Check } from 'lucide-react'
 
 const STATUS_MAP = Object.fromEntries(STATUS_COLUMNS.map(c => [c.id, c]))
 
-export default function ListView({ tasks, members, onTaskClick, onAddTask, canAddTasks }) {
+function Checkbox({ checked, onChange }) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onChange() }}
+      className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all"
+      style={{
+        background: checked ? 'var(--accent)' : 'var(--bg-primary)',
+        border: `1.5px solid ${checked ? 'var(--accent)' : 'var(--border)'}`,
+        color: '#fff',
+      }}
+    >
+      {checked && <Check size={12} strokeWidth={3} />}
+    </button>
+  )
+}
+
+export default function ListView({ tasks, members, onTaskClick, onAddTask, canAddTasks, onBulkStatusChange, onBulkDelete }) {
   const [sortBy, setSortBy]   = useState('status')
   const [sortDir, setSortDir] = useState('asc')
   const [search, setSearch]   = useState('')
+  const [selected, setSelected] = useState(new Set())
+  const [lastClicked, setLastClicked] = useState(null)
 
   const handleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -23,28 +43,32 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
       return sortDir === 'asc' ? cmp : -cmp
     })
 
-  const SortIcon = ({ col }) => (
-    <span style={{ color: sortBy === col ? 'var(--accent)' : 'var(--text-muted)', opacity: sortBy === col ? 1 : 0.4 }}>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        {sortBy === col && sortDir === 'desc'
-          ? <polyline points="18 15 12 9 6 15" />
-          : <polyline points="6 9 12 15 18 9" />}
-      </svg>
-    </span>
-  )
+  const toggleSelect = useCallback((id, e) => {
+    if (e?.shiftKey && lastClicked) {
+      const idxA = filtered.findIndex(t => t.id === lastClicked)
+      const idxB = filtered.findIndex(t => t.id === id)
+      const [start, end] = idxA < idxB ? [idxA, idxB] : [idxB, idxA]
+      const newSel = new Set(selected)
+      for (let i = start; i <= end; i++) newSel.add(filtered[i].id)
+      setSelected(newSel)
+    } else {
+      setSelected(prev => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    }
+    setLastClicked(id)
+  }, [filtered, lastClicked, selected])
 
-  const Th = ({ col, label, className = '' }) => (
-    <th
-      onClick={() => handleSort(col)}
-      className={`px-3 py-2.5 text-left text-xs font-semibold cursor-pointer select-none whitespace-nowrap ${className}`}
-      style={{ color: sortBy === col ? 'var(--accent)' : 'var(--text-muted)', userSelect: 'none' }}
-    >
-      <div className="flex items-center gap-1">
-        {label}
-        <SortIcon col={col} />
-      </div>
-    </th>
-  )
+  const clearSelection = () => setSelected(new Set())
+
+  const selectAll = () => {
+    if (selected.size === filtered.length) clearSelection()
+    else setSelected(new Set(filtered.map(t => t.id)))
+  }
+
 
   // ── Shared subcomponents ─────────────────────────────────────────────────────
 
@@ -126,10 +150,26 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
     )
   }
 
+  const bulkActions = [
+    {
+      label: 'Done',
+      icon: <Check size={12} />,
+      onClick: () => { onBulkStatusChange?.([...selected], 'done'); clearSelection() },
+    },
+    {
+      label: 'To Do',
+      onClick: () => { onBulkStatusChange?.([...selected], 'todo'); clearSelection() },
+    },
+    {
+      label: 'Delete',
+      danger: true,
+      onClick: () => { onBulkDelete?.([...selected]); clearSelection() },
+    },
+  ]
+
   return (
     <>
       <style>{`
-        /* ── Responsive breakpoint ── */
         @media (max-width: 640px) {
           .lv-table-wrap  { display: none !important; }
           .lv-cards-wrap  { display: flex !important; }
@@ -138,14 +178,8 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
           .lv-table-wrap  { display: block !important; }
           .lv-cards-wrap  { display: none !important; }
         }
-
-        /* ── Card hover ── */
-        .lv-card {
-          transition: background 0.15s, box-shadow 0.15s;
-        }
-        .lv-card:active {
-          background: var(--bg-primary) !important;
-        }
+        .lv-card { transition: background 0.15s, box-shadow 0.15s; }
+        .lv-card:active { background: var(--bg-primary) !important; }
       `}</style>
 
       <div className="flex flex-col h-full gap-4">
@@ -172,6 +206,14 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
             />
           </div>
 
+          <button
+            onClick={selectAll}
+            className="px-3 py-2 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+          >
+            {selected.size === filtered.length && filtered.length > 0 ? 'Deselect all' : 'Select all'}
+          </button>
+
           <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
             {filtered.length} task{filtered.length !== 1 ? 's' : ''}
           </span>
@@ -192,15 +234,56 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
           className="lv-table-wrap rounded-2xl flex-1 overflow-y-auto"
           style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}
         >
-          <table className="w-full border-collapse" style={{ minWidth: 600 }}>
+          <table className="w-full border-collapse" style={{ minWidth: 640 }}>
             <thead style={{ background: 'var(--bg-secondary)', position: 'sticky', top: 0, zIndex: 1 }}>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <Th col="title"    label="Task"     className="w-[35%]" />
-                <Th col="status"   label="Status"   className="w-[14%]" />
-                <Th col="priority" label="Priority" className="w-[13%]" />
+                <th className="px-3 py-2.5 w-10">
+                  <Checkbox
+                    checked={selected.size === filtered.length && filtered.length > 0}
+                    onChange={selectAll}
+                  />
+                </th>
+                {['title','status','priority'].map((col) => {
+                  const labels = { title: 'Task', status: 'Status', priority: 'Priority' }
+                  const widths = { title: 'w-[30%]', status: 'w-[14%]', priority: 'w-[13%]' }
+                  return (
+                    <th
+                      key={col}
+                      onClick={() => handleSort(col)}
+                      className={`px-3 py-2.5 text-left text-xs font-semibold cursor-pointer select-none whitespace-nowrap ${widths[col]}`}
+                      style={{ color: sortBy === col ? 'var(--accent)' : 'var(--text-muted)', userSelect: 'none' }}
+                    >
+                      <div className="flex items-center gap-1">
+                        {labels[col]}
+                        <span style={{ color: sortBy === col ? 'var(--accent)' : 'var(--text-muted)', opacity: sortBy === col ? 1 : 0.4 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            {sortBy === col && sortDir === 'desc'
+                              ? <polyline points="18 15 12 9 6 15" />
+                              : <polyline points="6 9 12 15 18 9" />}
+                          </svg>
+                        </span>
+                      </div>
+                    </th>
+                  )
+                })}
                 <th className="px-3 py-2.5 text-left text-xs font-semibold w-[16%] whitespace-nowrap"
                   style={{ color: 'var(--text-muted)' }}>Assignee</th>
-                <Th col="due_date" label="Due date" className="w-[14%]" />
+                <th
+                  onClick={() => handleSort('due_date')}
+                  className="px-3 py-2.5 text-left text-xs font-semibold cursor-pointer select-none whitespace-nowrap w-[14%]"
+                  style={{ color: sortBy === 'due_date' ? 'var(--accent)' : 'var(--text-muted)', userSelect: 'none' }}
+                >
+                  <div className="flex items-center gap-1">
+                    Due date
+                    <span style={{ color: sortBy === 'due_date' ? 'var(--accent)' : 'var(--text-muted)', opacity: sortBy === 'due_date' ? 1 : 0.4 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        {sortBy === 'due_date' && sortDir === 'desc'
+                          ? <polyline points="18 15 12 9 6 15" />
+                          : <polyline points="6 9 12 15 18 9" />}
+                      </svg>
+                    </span>
+                  </div>
+                </th>
                 <th className="px-3 py-2.5 text-xs font-semibold w-[8%]"
                   style={{ color: 'var(--text-muted)' }}></th>
               </tr>
@@ -208,23 +291,29 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <td colSpan={7} className="py-16 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
                     {search ? 'No tasks match your search.' : 'No tasks yet.'}
                   </td>
                 </tr>
               )}
               {filtered.map((task, i) => {
                 const isLast = i === filtered.length - 1
+                const isSelected = selected.has(task.id)
                 return (
                   <tr
                     key={task.id}
                     onClick={() => onTaskClick(task)}
                     className="cursor-pointer transition-colors"
-                    style={{ borderBottom: isLast ? 'none' : '1px solid var(--border)' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-primary)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    style={{
+                      borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                      background: isSelected ? 'var(--accent-light)' : 'transparent',
+                    }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-primary)' }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
                   >
-                    {/* Title */}
+                    <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                      <Checkbox checked={isSelected} onChange={() => toggleSelect(task.id)} />
+                    </td>
                     <td className="px-3 py-3">
                       <p className="text-xs font-semibold truncate max-w-[260px]"
                         style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
@@ -241,20 +330,10 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
                         </div>
                       )}
                     </td>
-
-                    {/* Status */}
                     <td className="px-3 py-3"><StatusBadge task={task} /></td>
-
-                    {/* Priority */}
                     <td className="px-3 py-3"><PriorityBadge task={task} /></td>
-
-                    {/* Assignee */}
                     <td className="px-3 py-3"><AssigneeCell task={task} /></td>
-
-                    {/* Due date — dedicated column, never truncated */}
                     <td className="px-3 py-3"><DueCell task={task} /></td>
-
-                    {/* Actions */}
                     <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-center">
                         <button
@@ -277,7 +356,7 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
         {/* ── Mobile: card list ────────────────────────────────────────────────── */}
         <div
           className="lv-cards-wrap flex-col gap-2 flex-1 overflow-y-auto"
-          style={{ display: 'none' }}   /* overridden by CSS above on mobile */
+          style={{ display: 'none' }}
         >
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-2"
@@ -286,64 +365,66 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
             </div>
           )}
 
-          {filtered.map(task => (
-            <div
-              key={task.id}
-              className="lv-card rounded-2xl p-3 cursor-pointer"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-              onClick={() => onTaskClick(task)}
-            >
-              {/* Row 1: title + edit button */}
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold leading-snug"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-                    {task.title}
-                  </p>
-                  {task.tags?.length > 0 && (
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      {task.tags.map(t => (
-                        <span key={t} className="px-1 py-0.5 rounded"
-                          style={{ background: 'var(--accent-light)', color: 'var(--accent)', fontSize: 9 }}>
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+          {filtered.map(task => {
+            const isSelected = selected.has(task.id)
+            return (
+              <div
+                key={task.id}
+                className="lv-card rounded-2xl p-3 cursor-pointer"
+                style={{
+                  background: isSelected ? 'var(--accent-light)' : 'var(--bg-card)',
+                  border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                }}
+                onClick={() => onTaskClick(task)}
+              >
+                <div className="flex items-start gap-3 mb-2">
+                  <div onClick={e => e.stopPropagation()}>
+                    <Checkbox checked={isSelected} onChange={() => toggleSelect(task.id)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold leading-snug"
+                      style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+                      {task.title}
+                    </p>
+                    {task.tags?.length > 0 && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {task.tags.map(t => (
+                          <span key={t} className="px-1 py-0.5 rounded"
+                            style={{ background: 'var(--accent-light)', color: 'var(--accent)', fontSize: 9 }}>
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={e => { e.stopPropagation(); onTaskClick(task) }}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
-                  style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
-                >
-                  {I.edit}
-                </button>
-              </div>
-
-              {/* Row 2: status + priority badges */}
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <StatusBadge task={task} />
-                <PriorityBadge task={task} />
-              </div>
-
-              {/* Row 3: assignee + due date */}
-              <div className="flex items-center justify-between gap-2">
-                <AssigneeCell task={task} />
-                <div className="flex items-center gap-1 shrink-0">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}>
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                  <DueCell task={task} />
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <StatusBadge task={task} />
+                  <PriorityBadge task={task} />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <AssigneeCell task={task} />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <DueCell task={task} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
+        <BulkActionBar
+          selectedCount={selected.size}
+          onClear={clearSelection}
+          actions={bulkActions}
+        />
       </div>
     </>
   )

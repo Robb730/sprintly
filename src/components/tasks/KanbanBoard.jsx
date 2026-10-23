@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from 'react'
 import TaskCard from './TaskCard'
 import { STATUS_COLUMNS } from '../data/projectData.jsx'
 import I from '../shared/Icons'
+import BulkActionBar from '../shared/BulkActionBar'
+import { Check } from 'lucide-react'
 
 export default function KanbanBoard({
   tasks,
@@ -13,21 +15,21 @@ export default function KanbanBoard({
   isManager,
   onStatusChange,
   onDragError,
+  groupBy = 'none',
 }) {
-  // ── Shared drag state ────────────────────────────────────────────────────────
   const [dragging, setDragging]   = useState(null)
   const [dragOver, setDragOver]   = useState(null)
   const [shakeId, setShakeId]     = useState(null)
+  const [selected, setSelected] = useState(new Set())
 
-  // ── Touch-drag state (refs to avoid stale closures in move handlers) ─────────
-  const touchTask      = useRef(null)   // task being touch-dragged
-  const touchGhost     = useRef(null)   // floating clone element
-  const touchColId     = useRef(null)   // column currently under finger
-  const touchStartXY   = useRef(null)   // {x,y} where touch began
-  const isTouchDragging = useRef(false) // true once we've committed to a drag
+  const touchTask      = useRef(null)
+  const touchGhost     = useRef(null)
+  const touchColId     = useRef(null)
+  const touchStartXY   = useRef(null)
+  const isTouchDragging = useRef(false)
+  const longPressTimer = useRef(null)
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  const tasksByCol = (colId) => tasks.filter(t => t.status === colId)
+  const tasksByCol = (colId, list = tasks) => list.filter(t => t.status === colId)
 
   const canDragTask = (task) => {
     if (task.status === 'backlog') return false
@@ -47,8 +49,12 @@ export default function KanbanBoard({
     onDragError?.(msg)
   }
 
-  // ── Mouse / desktop drag handlers ────────────────────────────────────────────
   const handleDragStart = (e, task) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      toggleSelect(task.id)
+      return
+    }
     if (!canDragTask(task)) { e.preventDefault(); return }
     setDragging(task)
     e.dataTransfer.effectAllowed = 'move'
@@ -89,35 +95,27 @@ export default function KanbanBoard({
 
   const handleDragEnd = () => { setDragging(null); setDragOver(null) }
 
-  // ── Touch drag handlers ───────────────────────────────────────────────────────
-  // We create a floating "ghost" clone that follows the finger.
-  // Column detection uses document.elementFromPoint on every touchmove.
+  const toggleSelect = useCallback((id) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
+  // Touch drag handlers (simplified)
   const createGhost = (sourceEl, x, y) => {
-    const rect   = sourceEl.getBoundingClientRect()
-    const ghost  = sourceEl.cloneNode(true)
-    const width  = rect.width
-
+    const rect = sourceEl.getBoundingClientRect()
+    const ghost = sourceEl.cloneNode(true)
     ghost.style.cssText = `
-      position: fixed;
-      top: ${rect.top}px;
-      left: ${rect.left}px;
-      width: ${width}px;
-      z-index: 9999;
-      pointer-events: none;
-      opacity: 0.85;
-      transform: scale(1.03) rotate(-1deg);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
-      border-radius: 12px;
-      transition: transform 0.1s ease;
+      position: fixed; top: ${rect.top}px; left: ${rect.left}px; width: ${rect.width}px;
+      z-index: 9999; pointer-events: none; opacity: 0.85;
+      transform: scale(1.03) rotate(-1deg); box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      border-radius: 12px; transition: transform 0.1s ease;
     `
     document.body.appendChild(ghost)
     return { ghost, offsetX: x - rect.left, offsetY: y - rect.top }
-  }
-
-  const moveGhost = (ghost, x, y, offsetX, offsetY) => {
-    ghost.style.left = `${x - offsetX}px`
-    ghost.style.top  = `${y - offsetY}px`
   }
 
   const removeGhost = () => {
@@ -127,91 +125,74 @@ export default function KanbanBoard({
     }
   }
 
-  // Find the kanban column element under a point (ignoring the ghost)
   const getColUnderPoint = (x, y) => {
-    // Temporarily hide ghost so elementFromPoint can see what's underneath
     const g = touchGhost.current?.ghost
     if (g) g.style.display = 'none'
     const el = document.elementFromPoint(x, y)
     if (g) g.style.display = ''
-
-    // Walk up DOM to find a [data-col-id] attribute
     const colEl = el?.closest('[data-col-id]')
     return colEl ? colEl.getAttribute('data-col-id') : null
   }
 
   const handleTouchStart = useCallback((e, task) => {
     if (!canDragTask(task)) return
-
     const touch = e.touches[0]
-    touchTask.current    = task
+    touchTask.current = task
     touchStartXY.current = { x: touch.clientX, y: touch.clientY }
     isTouchDragging.current = false
 
-    // Don't preventDefault here — let scroll work until intentional drag
+    // Long-press for selection (500ms)
+    longPressTimer.current = setTimeout(() => {
+      toggleSelect(task.id)
+      touchTask.current = null
+    }, 500)
   }, [tasks, isManager, currentUser])
 
   const handleTouchMove = useCallback((e) => {
     if (!touchTask.current) return
-
     const touch = e.touches[0]
-    const dx    = touch.clientX - touchStartXY.current.x
-    const dy    = touch.clientY - touchStartXY.current.y
-    const dist  = Math.sqrt(dx * dx + dy * dy)
-
-    // Start drag after moving 8px (avoids accidental drags on taps/scrolls)
-    if (!isTouchDragging.current) {
-      if (dist < 8) return
+    const dx = touch.clientX - touchStartXY.current.x
+    const dy = touch.clientY - touchStartXY.current.y
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    if (dist > 8 && !isTouchDragging.current) {
+      clearTimeout(longPressTimer.current)
       isTouchDragging.current = true
-
-      // Build ghost from the card element
       const cardEl = e.currentTarget
       const { ghost, offsetX, offsetY } = createGhost(cardEl, touchStartXY.current.x, touchStartXY.current.y)
       touchGhost.current = { ghost, offsetX, offsetY }
-
       setDragging(touchTask.current)
     }
-
-    // Always prevent scroll while touch-dragging
-    e.preventDefault()
-
-    const { ghost, offsetX, offsetY } = touchGhost.current
-    moveGhost(ghost, touch.clientX, touch.clientY, offsetX, offsetY)
-
-    const colId = getColUnderPoint(touch.clientX, touch.clientY)
-    touchColId.current = colId
-    setDragOver(colId)
+    if (isTouchDragging.current) {
+      e.preventDefault()
+      const { ghost, offsetX, offsetY } = touchGhost.current
+      ghost.style.left = `${touch.clientX - offsetX}px`
+      ghost.style.top = `${touch.clientY - offsetY}px`
+      const colId = getColUnderPoint(touch.clientX, touch.clientY)
+      touchColId.current = colId
+      setDragOver(colId)
+    }
   }, [])
 
-  const handleTouchEnd = useCallback(async (e) => {
+  const handleTouchEnd = useCallback(async () => {
+    clearTimeout(longPressTimer.current)
     if (!touchTask.current) return
-
-    const task  = touchTask.current
+    const task = touchTask.current
     const colId = touchColId.current
-
-    // Reset all refs
-    touchTask.current       = null
-    touchColId.current      = null
-    touchStartXY.current    = null
+    touchTask.current = null
+    touchColId.current = null
+    touchStartXY.current = null
+    const wasDragging = isTouchDragging.current
     isTouchDragging.current = false
     removeGhost()
     setDragging(null)
     setDragOver(null)
 
-    if (!colId) return  // dropped outside any column
-
+    if (!colId || !wasDragging) return
     if (!canDropOnCol(task, colId)) {
-      triggerShake(
-        task.id,
-        colId === 'backlog'
-          ? 'Tasks cannot be moved back to Backlog via drag.'
-          : 'You can only move tasks assigned to you.'
-      )
+      triggerShake(task.id, colId === 'backlog' ? 'Tasks cannot be moved back to Backlog via drag.' : 'You can only move tasks assigned to you.')
       return
     }
-
-    if (task.status === colId) return  // same column, no-op
-
+    if (task.status === colId) return
     try {
       await onStatusChange(task.id, colId)
     } catch {
@@ -219,151 +200,142 @@ export default function KanbanBoard({
     }
   }, [tasks, isManager, currentUser, onStatusChange, onDragError])
 
-  // ── Render ───────────────────────────────────────────────────────────────────
-  return (
-    <>
-      <style>{`
-        @keyframes cardShake {
-          0%   { transform: translateX(0); }
-          20%  { transform: translateX(-6px); }
-          40%  { transform: translateX(6px); }
-          60%  { transform: translateX(-4px); }
-          80%  { transform: translateX(4px); }
-          100% { transform: translateX(0); }
+  // Build swimlanes
+  const swimlanes = groupBy === 'assignee'
+    ? (() => {
+        const lanes = new Map()
+        lanes.set('unassigned', { id: 'unassigned', label: 'Unassigned', members: [] })
+        for (const m of members) lanes.set(m.id, { id: m.id, label: m.name, members: [m] })
+        const grouped = {}
+        for (const lane of lanes.values()) grouped[lane.id] = []
+        for (const t of tasks) {
+          const ids = Array.isArray(t.assignees) && t.assignees.length ? t.assignees : t.assigned_to ? [t.assigned_to] : []
+          if (!ids.length) grouped.unassigned.push(t)
+          else for (const id of ids) { if (grouped[id]) grouped[id].push(t) }
         }
-        .card-shake { animation: cardShake 0.45s ease; }
+        return { lanes: [...lanes.values()], grouped }
+      })()
+    : null
 
-        /* Prevent text selection while dragging on touch */
-        .kanban-board.is-dragging * {
-          user-select: none;
-          -webkit-user-select: none;
-        }
-      `}</style>
-
-      <div
-        className={`kanban-board flex gap-3 overflow-x-auto pb-4 h-full${dragging ? ' is-dragging' : ''}`}
-        style={{ minHeight: 0 }}
-      >
-        {STATUS_COLUMNS.map(col => {
-          const colTasks     = tasksByCol(col.id)
-          const isDragTarget = dragOver === col.id
-          const isBacklogCol = col.id === 'backlog'
-
-          return (
-            <div
-              key={col.id}
-              data-col-id={col.id}                      // ← used by touch detection
-              className="flex flex-col shrink-0 rounded-2xl transition-all duration-150"
-              style={{
-                width: 272,
-                background: isDragTarget ? 'var(--accent-light)' : 'var(--bg-secondary)',
-                border: `1.5px solid ${isDragTarget ? 'var(--accent)' : 'var(--border)'}`,
-                minHeight: 200,
-              }}
-              // Desktop drop target events
-              onDragOver={e => handleDragOver(e, col.id)}
-              onDrop={e => handleDrop(e, col.id)}
-            >
-              {/* Column header */}
-              <div
-                className="flex items-center justify-between px-3 py-3 shrink-0"
-                style={{ borderBottom: '1px solid var(--border)' }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col.color }} />
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}
-                  >
-                    {col.label}
-                  </span>
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded-md font-medium"
-                    style={{ background: 'var(--bg-primary)', color: 'var(--text-muted)', fontSize: 10 }}
-                  >
-                    {colTasks.length}
-                  </span>
-                </div>
-                {canAddTasks && (
-                  <button
-                    onClick={() => onAddTask(col.id)}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80"
-                    style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
-                    title={`Add task to ${col.label}`}
-                  >
-                    {I.plus}
-                  </button>
-                )}
+  const renderColumns = (taskList) => (
+    <div className="flex gap-3">
+      {STATUS_COLUMNS.map(col => {
+        const colTasks = tasksByCol(col.id, taskList)
+        const isDragTarget = dragOver === col.id
+        const isBacklogCol = col.id === 'backlog'
+        return (
+          <div
+            key={col.id}
+            data-col-id={col.id}
+            className="flex flex-col shrink-0 rounded-2xl transition-all duration-150"
+            style={{
+              width: 272,
+              background: isDragTarget ? 'var(--accent-light)' : 'var(--bg-secondary)',
+              border: `1.5px solid ${isDragTarget ? 'var(--accent)' : 'var(--border)'}`,
+              minHeight: 160,
+            }}
+            onDragOver={e => handleDragOver(e, col.id)}
+            onDrop={e => handleDrop(e, col.id)}
+          >
+            <div className="flex items-center justify-between px-3 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col.color }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>{col.label}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'var(--bg-primary)', color: 'var(--text-muted)', fontSize: 10 }}>{colTasks.length}</span>
               </div>
-
-              {/* Cards */}
-              <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                {colTasks.length === 0 && (
-                  <div
-                    className="flex items-center justify-center py-8 rounded-xl border border-dashed"
-                    style={{
-                      borderColor: isDragTarget ? 'var(--accent)' : 'var(--border)',
-                      color: 'var(--text-muted)',
-                    }}
-                  >
-                    <p className="text-xs">
-                      {isBacklogCol ? 'Tasks auto-assigned here' : 'Drop tasks here'}
-                    </p>
-                  </div>
-                )}
-
-                {colTasks.map(task => {
-                  const draggable = canDragTask(task)
-                  return (
-                    <div
-                      key={task.id}
-                      // ── Desktop ──────────────────────────────────────
-                      draggable={draggable}
-                      onDragStart={e => handleDragStart(e, task)}
-                      onDragEnd={handleDragEnd}
-                      // ── Touch / mobile ───────────────────────────────
-                      onTouchStart={draggable ? (e => handleTouchStart(e, task)) : undefined}
-                      onTouchMove={draggable ? handleTouchMove : undefined}
-                      onTouchEnd={draggable ? handleTouchEnd : undefined}
-                      // ────────────────────────────────────────────────
-                      className={shakeId === task.id ? 'card-shake' : ''}
-                      style={{
-                        opacity:    dragging?.id === task.id ? 0.4 : 1,
-                        cursor:     draggable ? 'grab' : 'default',
-                        transition: 'opacity 0.15s',
-                        // Prevents iOS long-press callout interfering with drag
-                        WebkitTouchCallout: draggable ? 'none' : 'default',
-                        touchAction: draggable ? 'none' : 'auto',
-                      }}
-                    >
-                      <TaskCard task={task} members={members} onClick={onTaskClick} />
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Add task footer — Backlog only, PM only */}
-              {canAddTasks && isManager && col.id === 'backlog' && (
-                <button
-                  onClick={() => onAddTask(col.id)}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium transition-colors shrink-0 rounded-b-2xl"
-                  style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.color      = 'var(--accent)'
-                    e.currentTarget.style.background = 'var(--accent-light)'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.color      = 'var(--text-muted)'
-                    e.currentTarget.style.background = 'transparent'
-                  }}
-                >
-                  {I.plus} Add task
+              {canAddTasks && (
+                <button onClick={() => onAddTask(col.id)} className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80" style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }} title={`Add task to ${col.label}`}>
+                  {I.plus}
                 </button>
               )}
             </div>
-          )
-        })}
-      </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              {colTasks.length === 0 && (
+                <div className="flex items-center justify-center py-6 rounded-xl border border-dashed" style={{ borderColor: isDragTarget ? 'var(--accent)' : 'var(--border)', color: 'var(--text-muted)' }}>
+                  <p className="text-xs">{isBacklogCol ? 'Tasks auto-assigned here' : 'Drop tasks here'}</p>
+                </div>
+              )}
+              {colTasks.map(task => {
+                const draggable = canDragTask(task)
+                const isSelected = selected.has(task.id)
+                return (
+                  <div
+                    key={task.id}
+                    draggable={draggable}
+                    onDragStart={e => handleDragStart(e, task)}
+                    onDragEnd={handleDragEnd}
+                    onTouchStart={draggable ? (e => handleTouchStart(e, task)) : undefined}
+                    onTouchMove={draggable ? handleTouchMove : undefined}
+                    onTouchEnd={draggable ? handleTouchEnd : undefined}
+                    className={shakeId === task.id ? 'card-shake' : ''}
+                    style={{
+                      opacity: dragging?.id === task.id ? 0.4 : 1,
+                      cursor: draggable ? 'grab' : 'default',
+                      transition: 'opacity 0.15s',
+                      WebkitTouchCallout: draggable ? 'none' : 'default',
+                      touchAction: draggable ? 'none' : 'auto',
+                      outline: isSelected ? '2px solid var(--accent)' : 'none',
+                      borderRadius: 'var(--radius-lg)',
+                    }}
+                    onClick={(e) => { if (e.ctrlKey || e.metaKey) { e.stopPropagation(); toggleSelect(task.id) } else if (selected.size > 0) { e.stopPropagation(); toggleSelect(task.id) } else { onTaskClick(task) } }}
+                  >
+                    <TaskCard task={task} members={members} onClick={() => { if (selected.size === 0) onTaskClick(task) }} />
+                  </div>
+                )
+              })}
+            </div>
+            {canAddTasks && isManager && col.id === 'backlog' && (
+              <button onClick={() => onAddTask(col.id)} className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium transition-colors shrink-0 rounded-b-2xl" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
+                {I.plus} Add task
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  return (
+    <>
+      <style>{`
+        @keyframes cardShake { 0% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } 100% { transform: translateX(0); } }
+        .card-shake { animation: cardShake 0.45s ease; }
+        .kanban-board.is-dragging * { user-select: none; -webkit-user-select: none; }
+      `}</style>
+
+      {swimlanes ? (
+        <div className="flex flex-col gap-4">
+          {swimlanes.lanes.map(lane => {
+            const laneTasks = swimlanes.grouped[lane.id] || []
+            if (laneTasks.length === 0 && lane.id !== 'unassigned') return null
+            return (
+              <div key={lane.id} className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-white font-semibold" style={{ background: 'var(--accent)', fontSize: 9 }}>
+                    {lane.label.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{lane.label}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-md" style={{ background: 'var(--bg-primary)', color: 'var(--text-muted)', fontSize: 10 }}>{laneTasks.length}</span>
+                </div>
+                <div className="p-3 overflow-x-auto kanban-scroll">{renderColumns(laneTasks)}</div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className={`kanban-board kanban-scroll flex gap-3 overflow-x-auto pb-4 h-full${dragging ? ' is-dragging' : ''}`} style={{ minHeight: 0 }}>
+          {renderColumns(tasks)}
+        </div>
+      )}
+
+      <BulkActionBar
+        selectedCount={selected.size}
+        onClear={() => setSelected(new Set())}
+        actions={[
+          { label: 'Done', icon: <Check size={12} />, onClick: async () => { for (const id of selected) await onStatusChange(id, 'done'); setSelected(new Set()) } },
+          { label: 'To Do', onClick: async () => { for (const id of selected) await onStatusChange(id, 'todo'); setSelected(new Set()) } },
+        ]}
+      />
     </>
   )
 }

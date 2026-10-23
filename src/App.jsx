@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
+import ToastContainer from './components/shared/ToastContainer'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -56,9 +58,12 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <AppRoutes />
+            <ToastContainer />
+          </BrowserRouter>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   )

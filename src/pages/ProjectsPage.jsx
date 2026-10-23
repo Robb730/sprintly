@@ -4,9 +4,9 @@ import Sidebar from '../components/layout/Sidebar'
 import Navbar from '../components/layout/Navbar'
 import ProjectCard from '../components/projects/ProjectCard'
 import CreateProjectModal from '../components/projects/CreateProjectModal'
-import Toast from '../components/shared/Toast'
 import Button from '../components/shared/Button'
 import { useProjects } from '../hooks/useProjects'
+import { useToast } from '../hooks/useToast'
 
 const Icons = {
   plus:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
@@ -29,16 +29,13 @@ function FilterTab({ value, label, current, onClick }) {
 
 export default function ProjectsPage() {
   const { user } = useAuth()
-    const { projects, loading, createProject } = useProjects(user?.id)
+    const { projects, createProject } = useProjects(user?.id)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  const [toast, setToast] = useState(null)
+  const { show: showToast } = useToast()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
-
-  const showToast = (type, message) => { setToast({ type, message }); setTimeout(() => setToast(null), 4000) }
 
   const handleCreate = async ({ title, description }) => {
     try {
@@ -145,7 +142,6 @@ export default function ProjectsPage() {
       </div>
 
       {showCreate && <CreateProjectModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
     </div>
   )
 }
