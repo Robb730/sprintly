@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Users,
   LayoutList,
@@ -6,6 +7,8 @@ import {
   BookOpen,
   ChevronsLeft,
   ChevronsRight,
+  PanelRight,
+  X,
   Crown,
   UserPlus,
   UserMinus,
@@ -322,7 +325,54 @@ export default function ProjectSidePanel({
   const now = useNow()
   const onlineCount = members.filter(m => getPresence(m.last_seen_at, now) === 'online').length
 
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [mobileOpen])
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e) => { if (e.key === 'Escape') setMobileOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [mobileOpen])
+
+  const panelContent = (
+    <>
+      {tab === 'team' && (
+        <TeamTab
+          members={members}
+          now={now}
+          currentUserId={currentUserId}
+          isManager={isManager}
+          onInvite={onInvite}
+          onRemove={onRemoveMember}
+        />
+      )}
+      {tab === 'planning' && (
+        <PlanTab
+          project={project}
+          progress={progress}
+          taskDone={taskDone}
+          taskTotal={taskTotal}
+          isManager={isManager}
+          onDeleteProject={onDeleteProject}
+          extras={planExtras}
+        />
+      )}
+      {tab === 'activity' && <ActivityFeed projectId={projectId} />}
+      {tab === 'resources' && (
+        <ResourcesTab projectId={projectId} userId={currentUserId} isManager={isManager} />
+      )}
+    </>
+  )
+
   return (
+    <>
     <aside
       aria-label="Project sidebar"
       className="hidden lg:flex shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
@@ -383,31 +433,7 @@ export default function ProjectSidePanel({
           {/* Content */}
           <div className="flex-1 min-h-0 overflow-y-auto" role="tabpanel">
             <div className="p-3 flex flex-col gap-3">
-              {tab === 'team' && (
-                <TeamTab
-                  members={members}
-                  now={now}
-                  currentUserId={currentUserId}
-                  isManager={isManager}
-                  onInvite={onInvite}
-                  onRemove={onRemoveMember}
-                />
-              )}
-              {tab === 'planning' && (
-                <PlanTab
-                  project={project}
-                  progress={progress}
-                  taskDone={taskDone}
-                  taskTotal={taskTotal}
-                  isManager={isManager}
-                  onDeleteProject={onDeleteProject}
-                  extras={planExtras}
-                />
-              )}
-              {tab === 'activity' && <ActivityFeed projectId={projectId} />}
-              {tab === 'resources' && (
-                <ResourcesTab projectId={projectId} userId={currentUserId} isManager={isManager} />
-              )}
+              {panelContent}
             </div>
           </div>
         </div>
@@ -463,5 +489,105 @@ export default function ProjectSidePanel({
         </div>
       )}
     </aside>
+
+    {/* Mobile trigger */}
+    <button
+      type="button"
+      onClick={() => setMobileOpen(true)}
+      className="lg:hidden fixed z-40 flex items-center justify-center rounded-full transition-all active:scale-95"
+      style={{
+        right: 16,
+        bottom: 'calc(16px + env(safe-area-inset-bottom))',
+        width: 52,
+        height: 52,
+        background: 'var(--accent)',
+        color: '#fff',
+        boxShadow: '0 8px 24px rgba(37,99,235,0.35)',
+      }}
+      aria-label="Open project panel"
+    >
+      <PanelRight size={22} />
+    </button>
+
+    {mobileOpen && createPortal(
+      <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Project panel">
+        <button
+          type="button"
+          aria-label="Close panel"
+          onClick={() => setMobileOpen(false)}
+          className="absolute inset-0"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 flex flex-col animate-slide-up"
+          style={{
+            maxHeight: '88vh',
+            background: 'var(--bg-secondary)',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            boxShadow: '0 -12px 40px rgba(0,0,0,0.25)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+        >
+          <div className="flex justify-center pt-2">
+            <div className="h-1.5 w-10 rounded-full" style={{ background: 'var(--border)' }} />
+          </div>
+          <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+            <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+              Project panel
+            </h2>
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close"
+              className="w-8 h-8 flex items-center justify-center rounded-lg"
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="px-3 py-2 shrink-0">
+            <div
+              role="tablist"
+              aria-label="Sidebar sections"
+              className="grid grid-cols-4 gap-0.5 p-1 rounded-xl"
+              style={{ background: 'var(--bg-primary)' }}
+            >
+              {TABS.map(({ key, label, Icon }) => {
+                const active = tab === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => onTabChange(key)}
+                    className="flex flex-col items-center gap-1 py-2 rounded-lg transition-all"
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      background: active ? 'var(--bg-card)' : 'transparent',
+                      color: active ? 'var(--accent)' : 'var(--text-muted)',
+                      boxShadow: active ? '0 0 0 1px var(--border)' : 'none',
+                    }}
+                  >
+                    <Icon size={15} />
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
+            <div className="flex flex-col gap-3">
+              {panelContent}
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+
+    </>
   )
 }
