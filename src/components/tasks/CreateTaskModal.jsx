@@ -3,6 +3,7 @@ import { PRIORITY_META } from '../data/projectData.jsx'
 import Button from '../shared/Button'
 import I from '../shared/Icons'
 import AssigneePicker from "../shared/AssigneePicker.jsx";
+import DatePicker from "../shared/DatePicker.jsx";
 
 export default function CreateTaskModal({ onClose, onCreate, members, sprints = [], milestones = [], defaultSprintId = '' }) {
   const [form, setForm] = useState({
@@ -165,15 +166,7 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Due Date</label>
-              <input
-                type="date"
-                value={form.due_date}
-                onChange={e => set('due_date', e.target.value)}
-                className={inputCls}
-                style={inputStyle}
-                onFocus={focusIn}
-                onBlur={focusOut}
-              />
+              <DatePicker value={form.due_date} onChange={(v) => set('due_date', v)} placeholder="Select due date" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Milestone</label>

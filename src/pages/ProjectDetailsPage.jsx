@@ -18,8 +18,6 @@ import {
   Pencil,
   Trash2,
   ChevronRight,
-  Users,
-  Calendar,
   User,
   Zap,
   LayoutGrid,
@@ -28,22 +26,18 @@ import {
   Check,
   AlertTriangle,
   Crown,
-  UserMinus,
 } from "lucide-react";
 
-import ActivityFeed from "../components/activity/ActivityFeed.jsx";
+import ResourcesTab from "../components/projects/ResourcesTab.jsx";
+import ProjectSidePanel from "../components/projects/ProjectSidePanel.jsx";
 import { logActivity } from "../lib/activity.js";
 
-import {
-  getAvatarColor,
-  getInitials,
-} from "../components/data/projectData.jsx";
 import { useTasks } from "../hooks/useTasks.js";
-import { LayoutList, Activity } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { useToast } from "../hooks/useToast.js";
 import InlineEdit from "../components/shared/InlineEdit.jsx";
 import ConfirmDialog from "../components/shared/ConfirmDialog.jsx";
+import DatePicker from "../components/shared/DatePicker.jsx";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts.js";
 
 // ─── Sprint selector ──────────────────────────────────────────────────────────
@@ -346,191 +340,6 @@ function SprintSelectorBar({
   );
 }
 
-// ─── Members panel ────────────────────────────────────────────────────────────
-function MembersPanel({ members, isManager, onInvite, onRemove }) {
-  const [expanded, setExpanded] = useState(false);
-
-  function getPresence(last_seen_at) {
-    if (!last_seen_at) return "offline";
-    // eslint-disable-next-line react-hooks/purity
-    const diff = (Date.now() - new Date(last_seen_at).getTime()) / 1000;
-    if (diff < 60) return "online";       // seen in last 60s
-    if (diff < 300) return "away";        // seen in last 5min
-    return "offline";
-  }
-
-  const presenceMeta = {
-    online:  { color: "#22c55e", label: "Online" },
-    away:    { color: "#f59e0b", label: "Away" },
-    offline: { color: "#94a3b8", label: null },
-  };
-
-  function formatLastSeen(last_seen_at) {
-    if (!last_seen_at) return "Never";
-    // eslint-disable-next-line react-hooks/purity
-    const diff = Math.floor((Date.now() - new Date(last_seen_at).getTime()) / 1000);
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
-  }
-
-  return (
-  <div
-    className="rounded-2xl overflow-hidden"
-    style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}
-  >
-    <button
-      onClick={() => setExpanded((e) => !e)}
-      className="w-full flex items-center justify-between px-4 py-3 transition-colors"
-      style={{ borderBottom: expanded ? "1px solid var(--border)" : "none" }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-primary)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-    >
-      <div className="flex items-center gap-2">
-  <span className="text-xs font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-    Members
-  </span>
-  <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 10 }}>
-    {members.length}
-  </span>
-</div>
-      <div className="flex items-center gap-2">
-        {/* Avatar stack */}
-        <div className="flex -space-x-1.5">
-          {members.slice(0, 3).map((m) => {
-            const presence = getPresence(m.last_seen_at);
-            return (
-              <div key={m.id} className="relative" style={{ zIndex: 1 }}>
-                <div
-                  className="w-5 h-5 rounded-md border flex items-center justify-center text-white font-semibold"
-                  style={{ background: getAvatarColor(m.name), fontSize: 7, borderColor: "var(--bg-card)" }}
-                >
-                  {getInitials(m.name)}
-                </div>
-                {presence !== "offline" && (
-                  <span style={{
-                    position: "absolute", bottom: -1, right: -1,
-                    width: 5, height: 5, borderRadius: "50%",
-                    background: presenceMeta[presence].color,
-                    border: "1.5px solid var(--bg-card)",
-                    display: "block",
-                  }} />
-                )}
-              </div>
-            );
-          })}
-          {members.length > 3 && (
-            <div className="w-5 h-5 rounded-md border flex items-center justify-center font-medium"
-              style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 9, borderColor: "var(--bg-card)", zIndex: 0 }}>
-              +{members.length - 3}
-            </div>
-          )}
-        </div>
-        <span style={{ color: "var(--text-muted)", transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-          {I.chevronDown}
-        </span>
-      </div>
-    </button>
-
-    {expanded && (
-      <div className="px-3 py-2 space-y-0.5">
-        {members.map((m) => {
-          const presence = getPresence(m.last_seen_at);
-          const pm = presenceMeta[presence];
-          return (
-            <div
-              key={m.id}
-              className="flex items-center gap-2.5 px-2 py-2 rounded-xl"
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-primary)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
-              {/* Avatar with conditional presence dot */}
-              <div className="relative shrink-0">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-semibold"
-                  style={{ background: getAvatarColor(m.name), fontSize: 10 }}
-                >
-                  {getInitials(m.name)}
-                </div>
-                {/* Only render dot if not offline */}
-                {presence !== "offline" ? (
-                  <span style={{
-                    position: "absolute", bottom: -1, right: -1,
-                    width: 7, height: 7, borderRadius: "50%",
-                    background: pm.color,
-                    border: "1.5px solid var(--bg-card)",
-                    display: "block",
-                  }} />
-                ) : (
-                  <span style={{
-                    position: "absolute", bottom: -1, right: -1,
-                    width: 7, height: 7, borderRadius: "50%",
-                    background: "var(--text-muted)",
-                    border: "1.5px solid var(--bg-card)",
-                    opacity: 0.35,
-                    display: "block",
-                  }} />
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: "var(--text-primary)" }}>
-                  {m.name}
-                </p>
-                <p className="truncate" style={{
-                  fontSize: 10,
-                  color: presence === "online" ? "#16a34a" : presence === "away" ? "#b45309" : "var(--text-muted)",
-                }}>
-                  {presence === "online"
-                    ? "● Active now"
-                    : presence === "away"
-                    ? `◌ Away · ${formatLastSeen(m.last_seen_at)}`
-                    : !m.last_seen_at
-                    ? "Never visited"
-                    : `Last seen ${formatLastSeen(m.last_seen_at)}`}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                {m.role === "manager" && (
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium"
-                    style={{ background: "rgba(37,99,235,0.1)", color: "var(--accent)", fontSize: 9 }}>
-                    <Crown size={11} /> PM
-                  </span>
-                )}
-                {isManager && m.role !== "manager" && (
-                  <button
-                    onClick={() => onRemove(m)}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-70"
-                    style={{ color: "#dc2626", background: "var(--bg-primary)" }}
-                    title="Remove member"
-                  >
-                    <UserMinus size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {isManager && (
-          <button
-            onClick={onInvite}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all mt-1"
-            style={{ color: "var(--accent)", border: "1px dashed var(--border)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-light)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            {I.userPlus} Invite member
-          </button>
-        )}
-      </div>
-    )}
-  </div>
-);
-}
-
 // ─── Permission editor modal ──────────────────────────────────────────────────
 function PermissionsModal({ member, onClose, onSave }) {
   const [perms, setPerms] = useState({ can_add_tasks: member.can_add_tasks });
@@ -797,14 +606,7 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
               >
                 Start date
               </label>
-              <input
-                type="date"
-                value={form.start_date}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, start_date: e.target.value }))
-                }
-                style={inputStyle}
-              />
+            <DatePicker value={form.start_date} onChange={(v) => setForm((f) => ({ ...f, start_date: v }))} placeholder="Start date" />
             </div>
             <div>
               <label
@@ -813,14 +615,7 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
               >
                 End date
               </label>
-              <input
-                type="date"
-                value={form.end_date}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, end_date: e.target.value }))
-                }
-                style={inputStyle}
-              />
+            <DatePicker value={form.end_date} onChange={(v) => setForm((f) => ({ ...f, end_date: v }))} placeholder="End date" />
             </div>
           </div>
 
@@ -1017,14 +812,7 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
                 (optional)
               </span>
             </label>
-            <input
-              type="date"
-              value={form.due_date}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, due_date: e.target.value }))
-              }
-              style={inputStyle}
-            />
+            <DatePicker value={form.due_date} onChange={(v) => setForm((f) => ({ ...f, due_date: v }))} placeholder="Due date" />
           </div>
 
           {error && (
@@ -2489,261 +2277,47 @@ export default function ProjectDetailsPage() {
                   members={members}
                 />
               )}
-            </div>
-
-            {/* Right panel */}
-            <div
-              className="hidden lg:flex flex-col shrink-0 transition-all duration-300"
-              style={{
-                borderLeft: "1px solid var(--border)",
-                width: rightPanelOpen ? 260 : 48,
-                background: "var(--bg-secondary)",
-                overflow: "hidden",
-              }}
-            >
-              {/* Panel header */}
-              <div
-                className="flex items-center shrink-0 px-2 gap-1"
-                style={{
-                  height: 48,
-                  borderBottom: "1px solid var(--border)",
-                  justifyContent: rightPanelOpen ? "space-between" : "center",
-                }}
-              >
-                {rightPanelOpen && (
-                  <div className="flex items-center gap-0.5">
-                    {[
-                      { key: "team", icon: <Users size={13} />, label: "Team" },
-                      {
-                        key: "planning",
-                        icon: <LayoutList size={13} />,
-                        label: "Plan",
-                      },
-                      {
-                        key: "activity",
-                        icon: <Activity size={13} />,
-                        label: "Activity",
-                      },
-                    ].map((t) => (
-                      <button
-                        key={t.key}
-                        onClick={() => setPanelTab(t.key)}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all"
-                        style={{
-                          background:
-                            panelTab === t.key
-                              ? "var(--accent-light)"
-                              : "transparent",
-                          color:
-                            panelTab === t.key
-                              ? "var(--accent)"
-                              : "var(--text-muted)",
-                        }}
-                      >
-                        {t.icon} {t.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={() => setRightPanelOpen((o) => !o)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg transition-all hover:opacity-80"
-                  style={{
-                    color: "var(--text-muted)",
-                    background: "var(--bg-primary)",
-                    border: "1px solid var(--border)",
-                    flexShrink: 0,
-                  }}
-                  title={rightPanelOpen ? "Collapse panel" : "Expand panel"}
-                >
-                  <span
-                    style={{
-                      transform: rightPanelOpen
-                        ? "rotate(0deg)"
-                        : "rotate(180deg)",
-                      transition: "transform 0.3s",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <ChevronRight size={14} />
-                  </span>
-                </button>
-              </div>
-
-              {/* Panel content */}
-              <div
-                className="flex-1 overflow-y-auto"
-                style={{
-                  opacity: rightPanelOpen ? 1 : 0,
-                  transition: "opacity 0.2s",
-                  pointerEvents: rightPanelOpen ? "auto" : "none",
-                }}
-              >
-                <div className="px-3 py-3 flex flex-col gap-3">
-                  {panelTab === "team" && (
-                    <MembersPanel
-                      members={members}
-                      isManager={isManager}
-                      onInvite={() => setShowInvite(true)}
-                      onPermissionChange={setPermsMember}
-                      onRemove={handleRemoveMember}
-                    />
-                  )}
-
-                  {panelTab === "planning" && (
-                    <>
-                      <div
-                        className="rounded-2xl p-4 space-y-3"
-                        style={{
-                          border: "1px solid var(--border)",
-                          background: "var(--bg-card)",
-                        }}
-                      >
-                        <p
-                          className="text-xs font-semibold"
-                          style={{
-                            color: "var(--text-muted)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            fontSize: 10,
-                          }}
-                        >
-                          Project Info
-                        </p>
-                        {project.description && (
-                          <p
-                            className="text-xs leading-relaxed"
-                            style={{ color: "var(--text-secondary)" }}
-                          >
-                            {project.description}
-                          </p>
-                        )}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span style={{ color: "var(--text-muted)" }}>
-                              Progress
-                            </span>
-                            <span
-                              className="font-semibold"
-                              style={{ color: "var(--accent)" }}
-                            >
-                              {liveProgress}%
-                            </span>
-                          </div>
-                          <div
-                            className="h-1.5 rounded-full overflow-hidden"
-                            style={{ background: "var(--bg-primary)" }}
-                          >
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${liveProgress}%`,
-                                background: "var(--accent)",
-                              }}
-                            />
-                          </div>
-                        </div>
-                        {project.due_date && (
-                          <div
-                            className="flex items-center gap-1.5 text-xs"
-                            style={{ color: "var(--text-muted)" }}
-                          >
-                            <Calendar size={12} />
-                            Due{" "}
-                            {new Date(project.due_date).toLocaleDateString(
-                              "en-PH",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              },
-                            )}
-                          </div>
-                        )}
-                        <div
-                          className="flex items-center gap-1.5 text-xs"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          <Zap size={12} />
-                          {project.sprints?.length ?? 0} sprints ·{" "}
-                          {project.milestones?.length ?? 0} milestones
-                        </div>
-                        {isManager && (
-                          <div
-                            style={{
-                              paddingTop: 4,
-                              borderTop: "1px solid var(--border)",
-                              marginTop: 4,
-                            }}
-                          >
-                            <button
-                              onClick={() => setShowDeleteConfirm(true)}
-                              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-medium transition-all"
-                              style={{
-                                color: "#dc2626",
-                                border: "1px solid rgba(220,38,38,0.2)",
-                                background: "transparent",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background =
-                                  "rgba(220,38,38,0.06)";
-                                e.currentTarget.style.borderColor =
-                                  "rgba(220,38,38,0.4)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background =
-                                  "transparent";
-                                e.currentTarget.style.borderColor =
-                                  "rgba(220,38,38,0.2)";
-                              }}
-                            >
-                              <Trash2 size={12} />
-                              Delete project
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <SprintsPanel
-                        sprints={project.sprints ?? []}
-                        projectId={id}
-                        isManager={isManager}
-                        onSprintsChange={(sprints) =>
-                          setProject((p) => ({ ...p, sprints }))
-                        }
-                      />
-
-                      <MilestonesPanel
-                        milestones={project.milestones ?? []}
-                        projectId={id}
-                        isManager={isManager}
-                        onMilestonesChange={(milestones) =>
-                          setProject((p) => ({ ...p, milestones }))
-                        }
-                      />
-                    </>
-                  )}
-
-                  {panelTab === "activity" && <ActivityFeed projectId={id} />}
-                </div>
-              </div>
-
-              {/* Collapsed hints */}
-              {!rightPanelOpen && (
-                <div
-                  className="flex flex-col items-center gap-3 pt-3"
-                  style={{ opacity: 0.4 }}
-                >
-                  <Users size={15} style={{ color: "var(--text-muted)" }} />
-                  <LayoutList
-                    size={15}
-                    style={{ color: "var(--text-muted)" }}
-                  />
-                  <Activity size={15} style={{ color: "var(--text-muted)" }} />
+              {tab === "resources" && (
+                <div className="px-4 md:px-6 py-4">
+                  <ResourcesTab projectId={id} userId={user?.id} isManager={isManager} />
                 </div>
               )}
             </div>
+
+            {/* Right panel */}
+            <ProjectSidePanel
+              open={rightPanelOpen}
+              onOpenChange={setRightPanelOpen}
+              tab={panelTab}
+              onTabChange={setPanelTab}
+              projectId={id}
+              project={project}
+              progress={liveProgress}
+              taskDone={tasks.filter((t) => t.status === "done").length}
+              taskTotal={tasks.length}
+              members={members}
+              currentUserId={user?.id}
+              isManager={isManager}
+              onInvite={() => setShowInvite(true)}
+              onRemoveMember={handleRemoveMember}
+              onDeleteProject={() => setShowDeleteConfirm(true)}
+              planExtras={
+                <>
+                  <SprintsPanel
+                    sprints={project.sprints ?? []}
+                    projectId={id}
+                    isManager={isManager}
+                    onSprintsChange={(sprints) => setProject((p) => ({ ...p, sprints }))}
+                  />
+                  <MilestonesPanel
+                    milestones={project.milestones ?? []}
+                    projectId={id}
+                    isManager={isManager}
+                    onMilestonesChange={(milestones) => setProject((p) => ({ ...p, milestones }))}
+                  />
+                </>
+              }
+            />
           </div>
         </main>
       </div>

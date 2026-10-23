@@ -12,6 +12,7 @@ import I from "../shared/Icons";
 import { useToast } from "../../hooks/useToast.js";
 import CommentsSection from "./CommentSection";
 import AssigneePicker from "../shared/AssigneePicker";
+import DatePicker from "../shared/DatePicker";
 
 export default function TaskDetailModal({
   task,
@@ -339,15 +340,7 @@ export default function TaskDetailModal({
                   >
                     Due Date
                   </label>
-                  <input
-                    type="date"
-                    value={form.due_date}
-                    onChange={(e) => set("due_date", e.target.value)}
-                    className={inputCls}
-                    style={inputStyle}
-                    onFocus={focusIn}
-                    onBlur={focusOut}
-                  />
+                  <DatePicker value={form.due_date} onChange={(v) => set("due_date", v)} placeholder="Select due date" />
                 </div>
                 <div>
                   <label
