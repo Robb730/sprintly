@@ -95,14 +95,14 @@ export default function InviteMemberModal({ onClose, onInvite, existingEmails = 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md rounded-2xl overflow-hidden animate-fade-up opacity-0"
+      <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4"
+        <div className="flex items-center justify-between px-5 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
             <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
@@ -112,14 +112,14 @@ export default function InviteMemberModal({ onClose, onInvite, existingEmails = 
               They must have a Sprintly account.
             </p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg"
+          <button onClick={onClose} aria-label="Close" className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg"
             style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}>
             {I.close}
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-5 py-4 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
               Email address
@@ -131,7 +131,11 @@ export default function InviteMemberModal({ onClose, onInvite, existingEmails = 
                 onChange={e => handleCheck(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
                 placeholder="teammate@example.com"
-                className="flex-1 px-3 py-2.5 rounded-xl text-xs outline-none transition-all"
+                autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                className="flex-1 min-w-0 px-3 py-2.5 rounded-xl text-xs outline-none transition-all"
                 style={{
                   background: 'var(--bg-primary)',
                   border: `1px solid ${
@@ -167,11 +171,11 @@ export default function InviteMemberModal({ onClose, onInvite, existingEmails = 
           {sent.length > 0 && (
             <div>
               <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Invites sent</p>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-h-40 overflow-y-auto overscroll-contain">
                 {sent.map(e => (
-                  <div key={e} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+                  <div key={e} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs min-w-0"
                     style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', color: 'var(--success)' }}>
-                    {I.check} {e}
+                    <span className="shrink-0">{I.check}</span> <span className="break-all min-w-0">{e}</span>
                   </div>
                 ))}
               </div>
@@ -179,8 +183,8 @@ export default function InviteMemberModal({ onClose, onInvite, existingEmails = 
           )}
         </div>
 
-        <div className="px-5 pb-4">
-          <Button variant="secondary" size="sm" onClick={onClose} className="w-full">Done</Button>
+        <div className="px-5 pt-1 pb-safe shrink-0">
+          <Button variant="secondary" size="sm" onClick={onClose} className="w-full min-h-11 sm:min-h-0">Done</Button>
         </div>
       </div>
     </div>

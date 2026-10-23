@@ -80,7 +80,7 @@ export default function AuthPage() {
 
   return (
     <div
-      className="min-h-screen flex"
+      className="min-h-app flex"
       style={{ background: "var(--bg-primary)" }}
     >
       {toast && (

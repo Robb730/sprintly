@@ -164,14 +164,14 @@ function QuickTaskPanel({ task, onClose, onStatusChange }) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-fade-up"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh' }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>Task Details</h2>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg"
+          <button onClick={onClose} aria-label="Close" className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg"
             style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}><X size={14} /></button>
         </div>
-        <div className="px-5 py-4 space-y-4 overflow-y-auto">
+        <div className="px-5 py-4 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain pb-safe">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium px-2 py-0.5 rounded-md" style={{ background: pri.bg, color: pri.text }}>
               <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ background: pri.dot }} />{pri.label}
@@ -194,7 +194,7 @@ function QuickTaskPanel({ task, onClose, onStatusChange }) {
             </div>
           </div>
           <button onClick={() => { onClose(); navigate(`/projects/${task.project_id}`) }}
-            className="w-full py-2 rounded-xl text-xs font-medium transition-all"
+            className="w-full py-2.5 sm:py-2 rounded-xl text-xs font-medium transition-all"
             style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid rgba(37,99,235,0.2)' }}>
             Open in project →
           </button>
@@ -259,7 +259,7 @@ export default function MyTasksPage() {
   }, {})
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex h-app overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Navbar title="My Tasks" onMenuClick={() => setMobileOpen(true)} />

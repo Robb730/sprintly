@@ -234,7 +234,7 @@ function DesktopSidebar({ collapsed, setCollapsed }) {
 
   return (
     <aside
-      className="hidden md:flex flex-col h-screen sticky top-0 shrink-0 overflow-hidden"
+      className="hidden md:flex flex-col h-app sticky top-0 shrink-0 overflow-hidden"
       style={{
         width: collapsed ? 60 : 220,
         transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)",

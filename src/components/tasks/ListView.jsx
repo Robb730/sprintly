@@ -6,10 +6,13 @@ import { Check } from 'lucide-react'
 
 const STATUS_MAP = Object.fromEntries(STATUS_COLUMNS.map(c => [c.id, c]))
 
-function Checkbox({ checked, onChange }) {
+function Checkbox({ checked, onChange, label = 'Select task' }) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onChange() }}
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
       className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all"
       style={{
         background: checked ? 'var(--accent)' : 'var(--bg-primary)',
@@ -208,7 +211,7 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
 
           <button
             onClick={selectAll}
-            className="px-3 py-2 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
+            className="px-3 py-2 min-h-10 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             {selected.size === filtered.length && filtered.length > 0 ? 'Deselect all' : 'Select all'}
@@ -231,7 +234,7 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
 
         {/* ── Desktop: table ───────────────────────────────────────────────────── */}
         <div
-          className="lv-table-wrap rounded-2xl flex-1 overflow-y-auto"
+          className="lv-table-wrap rounded-2xl flex-1 overflow-auto"
           style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}
         >
           <table className="w-full border-collapse" style={{ minWidth: 640 }}>
@@ -378,12 +381,12 @@ export default function ListView({ tasks, members, onTaskClick, onAddTask, canAd
                 onClick={() => onTaskClick(task)}
               >
                 <div className="flex items-start gap-3 mb-2">
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="p-3 -m-3" onClick={e => e.stopPropagation()}>
                     <Checkbox checked={isSelected} onChange={() => toggleSelect(task.id)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold leading-snug"
-                      style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+                    <p className="text-xs font-semibold leading-snug break-words"
+                      style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)', overflowWrap: 'anywhere' }}>
                       {task.title}
                     </p>
                     {task.tags?.length > 0 && (

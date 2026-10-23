@@ -74,8 +74,8 @@ export default function ToastContainer() {
             </span>
             <span style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.3 }}>{t.message}</span>
             <button onClick={() => handleDismiss(t.id)}
-              className="shrink-0 flex items-center justify-center rounded-md transition-opacity hover:opacity-60"
-              style={{ width: 20, height: 20, color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              className="shrink-0 -m-2 flex items-center justify-center rounded-md transition-opacity hover:opacity-60"
+              style={{ width: 36, height: 36, color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
               aria-label="Dismiss">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

@@ -2,15 +2,16 @@ export default function BulkActionBar({ selectedCount, onClear, actions = [] }) 
   if (selectedCount === 0) return null
   return (
     <div
-      className="fixed z-40 flex items-center gap-2 px-3 py-2 rounded-2xl shadow-lg animate-fade-up"
+      className="fixed z-40 flex items-center justify-center gap-2 flex-wrap px-3 py-2 rounded-2xl shadow-lg animate-fade-up"
       style={{
-        bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+        bottom: 'max(1.25rem, env(safe-area-inset-bottom))',
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
         boxShadow: 'var(--shadow-xl)',
-        maxWidth: '92vw',
+        width: 'max-content',
+        maxWidth: 'calc(100vw - 1.5rem)',
       }}
     >
       <span className="text-xs font-semibold px-2" style={{ color: 'var(--text-primary)' }}>

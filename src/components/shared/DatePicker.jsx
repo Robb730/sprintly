@@ -81,14 +81,14 @@ function Calendar({ value, onChange, minDate, maxDate }) {
   return (
     <div style={{ width: 260 }}>
       <div className="flex items-center justify-between mb-3">
-        <button type="button" onClick={prevMonth} className="w-7 h-7 flex items-center justify-center rounded-lg transition-all hover:opacity-70"
+        <button type="button" onClick={prevMonth} className="w-9 h-9 -mx-1 flex items-center justify-center rounded-lg transition-all hover:opacity-70"
           style={{ color: 'var(--text-secondary)', background: 'var(--bg-primary)' }} aria-label="Previous month">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
           {MONTHS[month]} {year}
         </span>
-        <button type="button" onClick={nextMonth} className="w-7 h-7 flex items-center justify-center rounded-lg transition-all hover:opacity-70"
+        <button type="button" onClick={nextMonth} className="w-9 h-9 -mx-1 flex items-center justify-center rounded-lg transition-all hover:opacity-70"
           style={{ color: 'var(--text-secondary)', background: 'var(--bg-primary)' }} aria-label="Next month">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>

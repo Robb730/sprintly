@@ -83,6 +83,11 @@ input[type="date"] {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--bg-primary);
@@ -90,6 +95,33 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button, a, [role="button"], input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Full-height that tracks the visible viewport on mobile browsers/PWAs */
+.h-app { height: 100vh; height: 100dvh; }
+.min-h-app { min-height: 100vh; min-height: 100dvh; }
+
+/* Bottom sheets and modal cards that never hide under iOS chrome */
+.sheet-card { max-height: 90vh; max-height: 90dvh; }
+.sheet-tall { max-height: 100vh; max-height: 100dvh; }
+
+/* Safe-area helpers for notched devices */
+.pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* 16px inputs stop iOS Safari from zooming the whole app on focus */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {

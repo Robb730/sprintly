@@ -91,7 +91,7 @@ export default function AcceptInvitePage() {
 
   if (status === 'need_login') {
     return (
-      <div className="flex h-screen items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
+      <div className="flex h-app items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
         <div className="text-center space-y-4 p-8 rounded-2xl max-w-sm w-full"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <div style={{ fontSize: 36 }}>🔐</div>
@@ -119,7 +119,7 @@ export default function AcceptInvitePage() {
 
   if (status === 'wrong_account') {
     return (
-      <div className="flex h-screen items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
+      <div className="flex h-app items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
         <div className="text-center space-y-4 p-8 rounded-2xl max-w-sm w-full"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <div style={{ fontSize: 36 }}>👤</div>
@@ -152,7 +152,7 @@ export default function AcceptInvitePage() {
   }[status]
 
   return (
-    <div className="flex h-screen items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex h-app items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
       <div className="text-center space-y-3 p-8 rounded-2xl max-w-sm w-full"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <div style={{ fontSize: 40 }}>{ui.emoji}</div>

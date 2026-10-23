@@ -10,8 +10,8 @@ export default function AssigneePicker({ members, selected = [], onChange }) {
   useEffect(() => {
     if (!open) return;
     const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, [open]);
 
   function toggle(id) {
@@ -32,7 +32,7 @@ export default function AssigneePicker({ members, selected = [], onChange }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         style={{
-          width: "100%", minHeight: 38, padding: "5px 10px",
+          width: "100%", minHeight: 44, padding: "5px 10px",
           borderRadius: 12, border: "1px solid var(--border)",
           background: "var(--bg-primary)", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
@@ -88,7 +88,8 @@ export default function AssigneePicker({ members, selected = [], onChange }) {
         <div style={{
           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
           zIndex: 100, background: "var(--bg-card)", border: "1px solid var(--border)",
-          borderRadius: 12, overflow: "hidden",
+          borderRadius: 12, overflowY: "auto", overscrollBehavior: "contain",
+          maxHeight: "min(50dvh, 300px)",
           boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
         }}>
           {members.length === 0 && (
@@ -103,7 +104,7 @@ export default function AssigneePicker({ members, selected = [], onChange }) {
                 onClick={() => toggle(m.id)}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 10,
-                  padding: "8px 12px", background: "transparent", border: "none",
+                  minHeight: 44, padding: "8px 12px", background: "transparent", border: "none",
                   cursor: "pointer", textAlign: "left", transition: "background 0.1s",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-primary)")}

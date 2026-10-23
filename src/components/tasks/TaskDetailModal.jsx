@@ -118,12 +118,12 @@ export default function TaskDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-lg rounded-2xl overflow-hidden animate-fade-up opacity-0"
+        className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
@@ -131,7 +131,7 @@ export default function TaskDetailModal({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-5 py-4"
+          className="flex items-center justify-between px-5 py-4 shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <h2
@@ -161,19 +161,21 @@ export default function TaskDetailModal({
                   }));
                   setEditing(true);
                 }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
+                className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all"
                 style={{
                   color: "var(--text-muted)",
                   background: "var(--bg-primary)",
                 }}
                 title="Edit task"
+                aria-label="Edit task"
               >
                 {I.settings}
               </button>
             )}
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg"
+              aria-label="Close"
+              className="w-10 h-10 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 flex items-center justify-center rounded-lg"
               style={{
                 color: "var(--text-muted)",
                 background: "var(--bg-primary)",
@@ -185,7 +187,7 @@ export default function TaskDetailModal({
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="px-4 sm:px-5 py-4 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain pb-safe sm:pb-4">
           {editing ? (
             <>
               {/* Title */}
@@ -235,7 +237,7 @@ export default function TaskDetailModal({
               </div>
 
               {/* Status + Priority */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -292,7 +294,7 @@ export default function TaskDetailModal({
               </div>
 
               {/* Assignee + Sprint */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -332,7 +334,7 @@ export default function TaskDetailModal({
               </div>
 
               {/* Due Date + Milestone */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -482,6 +484,7 @@ export default function TaskDetailModal({
                 style={{
                   color: "var(--text-primary)",
                   fontFamily: "var(--font-display)",
+                  overflowWrap: "anywhere",
                 }}
               >
                 {localTask.title}
@@ -491,7 +494,7 @@ export default function TaskDetailModal({
               {localTask.description ? (
                 <p
                   className="text-xs leading-relaxed"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: "var(--text-secondary)", overflowWrap: "anywhere" }}
                 >
                   {localTask.description}
                 </p>

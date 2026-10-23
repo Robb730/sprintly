@@ -12,6 +12,44 @@ function getAvatarColor(name = '') {
   return colors[(name?.charCodeAt(0) || 0) % colors.length]
 }
 
+function EyeIcon({ show }) {
+  return show
+    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+}
+
+// Defined at module scope so typing never remounts (and blurs) the input.
+function PasswordField({ label, value, show, onChange, onToggle, onEnter, style }) {
+  return (
+    <div>
+      <label className="block mb-1.5" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && onEnter()}
+          autoComplete="new-password"
+          style={{ ...style, paddingRight: 44 }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={show ? 'Hide password' : 'Show password'}
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <EyeIcon show={show} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function Toast({ type, message }) {
   return (
     <div
@@ -117,45 +155,14 @@ export default function ProfileModal({ onClose }) {
     }
   }
 
-  const EyeIcon = ({ show }) => show
-    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-
-  const PasswordField = ({ label, field }) => (
-    <div>
-      <label className="block mb-1.5" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          type={showPasswords[field] ? 'text' : 'password'}
-          value={passwords[field]}
-          onChange={e => setPasswords(p => ({ ...p, [field]: e.target.value }))}
-          onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
-          style={{ ...inputStyle, paddingRight: 36 }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-          onBlur={e => e.target.style.borderColor = 'var(--border)'}
-        />
-        <button
-          type="button"
-          onClick={() => setShowPasswords(p => ({ ...p, [field]: !p[field] }))}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <EyeIcon show={showPasswords[field]} />
-        </button>
-      </div>
-    </div>
-  )
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden"
+        className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden sheet-card animate-slide-up sm:animate-fade-up flex flex-col"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         {/* Header */}
@@ -171,14 +178,15 @@ export default function ProfileModal({ onClose }) {
           </h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg"
+            aria-label="Close"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg"
             style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)', border: '1px solid var(--border)' }}
           >
             <X size={14} />
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-6 max-h-[80vh] overflow-y-auto">
+        <div className="px-5 pt-5 space-y-6 flex-1 min-h-0 overflow-y-auto overscroll-contain pb-safe">
 
           {/* Avatar + email */}
           <div className="flex items-center gap-3">
@@ -242,7 +250,7 @@ export default function ProfileModal({ onClose }) {
             <button
               onClick={handleSaveProfile}
               disabled={savingProfile || !displayName.trim() || displayName.trim() === name}
-              className="w-full py-2 rounded-xl text-xs font-semibold transition-all"
+              className="w-full py-3 sm:py-2 rounded-xl text-xs font-semibold transition-all"
               style={{
                 background: 'var(--accent)',
                 color: '#fff',
@@ -271,15 +279,31 @@ export default function ProfileModal({ onClose }) {
               </span>
             </div>
 
-            <PasswordField label="New password"     field="next"    />
-            <PasswordField label="Confirm password" field="confirm" />
+            <PasswordField
+              label="New password"
+              value={passwords.next}
+              show={showPasswords.next}
+              onChange={(v) => setPasswords(p => ({ ...p, next: v }))}
+              onToggle={() => setShowPasswords(p => ({ ...p, next: !p.next }))}
+              onEnter={handleChangePassword}
+              style={inputStyle}
+            />
+            <PasswordField
+              label="Confirm password"
+              value={passwords.confirm}
+              show={showPasswords.confirm}
+              onChange={(v) => setPasswords(p => ({ ...p, confirm: v }))}
+              onToggle={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
+              onEnter={handleChangePassword}
+              style={inputStyle}
+            />
 
             {passwordMsg && <Toast type={passwordMsg.type} message={passwordMsg.text} />}
 
             <button
               onClick={handleChangePassword}
               disabled={savingPassword || !passwords.next || !passwords.confirm}
-              className="w-full py-2 rounded-xl text-xs font-semibold transition-all"
+              className="w-full py-3 sm:py-2 rounded-xl text-xs font-semibold transition-all"
               style={{
                 background: 'var(--bg-primary)',
                 color: 'var(--text-primary)',

@@ -248,7 +248,7 @@ export default function DashboardPage() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex h-app overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">

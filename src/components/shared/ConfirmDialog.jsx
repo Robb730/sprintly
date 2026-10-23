@@ -26,7 +26,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title = 'Are y
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-fade-up"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -34,7 +34,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title = 'Are y
             {title}
           </h3>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-5 py-4 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <p className="text-xs" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{message}</p>
           {requireType && (
             <div>
@@ -52,10 +52,10 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title = 'Are y
             </div>
           )}
         </div>
-        <div className="px-5 pb-5 grid grid-cols-2 gap-2">
+        <div className="px-5 pt-1 pb-safe sm:pb-5 grid grid-cols-2 gap-2 shrink-0">
           <button
             onClick={onClose}
-            className="py-2.5 rounded-xl text-xs font-medium"
+            className="py-3 sm:py-2.5 rounded-xl text-xs font-medium"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             Cancel
@@ -63,7 +63,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title = 'Are y
           <button
             onClick={handleConfirm}
             disabled={!canConfirm || loading}
-            className="py-2.5 rounded-xl text-xs font-semibold transition-opacity"
+            className="py-3 sm:py-2.5 rounded-xl text-xs font-semibold transition-opacity"
             style={{
               background: danger ? 'var(--danger)' : 'var(--accent)',
               color: '#fff',

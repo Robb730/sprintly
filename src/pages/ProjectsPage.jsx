@@ -52,7 +52,7 @@ export default function ProjectsPage() {
     .filter(p => !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background:'var(--bg-primary)' }}>
+    <div className="flex h-app overflow-hidden" style={{ background:'var(--bg-primary)' }}>
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">

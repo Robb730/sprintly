@@ -104,6 +104,10 @@ export default function KanbanBoard({
     })
   }, [])
 
+  // Swallow the synthetic click that follows a long-press or a touch drag,
+  // otherwise it immediately undoes the selection / reopens the task.
+  const suppressClick = useRef(false)
+
   // Touch drag handlers (simplified)
   const createGhost = (sourceEl, x, y) => {
     const rect = sourceEl.getBoundingClientRect()
@@ -143,6 +147,7 @@ export default function KanbanBoard({
 
     // Long-press for selection (500ms)
     longPressTimer.current = setTimeout(() => {
+      suppressClick.current = true
       toggleSelect(task.id)
       touchTask.current = null
     }, 500)
@@ -155,6 +160,12 @@ export default function KanbanBoard({
     const dy = touch.clientY - touchStartXY.current.y
     const dist = Math.sqrt(dx * dx + dy * dy)
     if (dist > 8 && !isTouchDragging.current) {
+      // Vertical swipes scroll the board; only horizontal movement starts a drag.
+      if (Math.abs(dy) > Math.abs(dx)) {
+        clearTimeout(longPressTimer.current)
+        touchTask.current = null
+        return
+      }
       clearTimeout(longPressTimer.current)
       isTouchDragging.current = true
       const cardEl = e.currentTarget
@@ -183,6 +194,7 @@ export default function KanbanBoard({
     touchStartXY.current = null
     const wasDragging = isTouchDragging.current
     isTouchDragging.current = false
+    if (wasDragging) suppressClick.current = true
     removeGhost()
     setDragging(null)
     setDragOver(null)
@@ -229,7 +241,8 @@ export default function KanbanBoard({
             data-col-id={col.id}
             className="flex flex-col shrink-0 rounded-2xl transition-all duration-150"
             style={{
-              width: 272,
+              width: 'min(272px, 82vw)',
+              scrollSnapAlign: 'start',
               background: isDragTarget ? 'var(--accent-light)' : 'var(--bg-secondary)',
               border: `1.5px solid ${isDragTarget ? 'var(--accent)' : 'var(--border)'}`,
               minHeight: 160,
@@ -244,7 +257,7 @@ export default function KanbanBoard({
                 <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'var(--bg-primary)', color: 'var(--text-muted)', fontSize: 10 }}>{colTasks.length}</span>
               </div>
               {canAddTasks && (
-                <button onClick={() => onAddTask(col.id)} className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80" style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }} title={`Add task to ${col.label}`}>
+                <button onClick={() => onAddTask(col.id)} className="w-9 h-9 -my-1.5 flex items-center justify-center rounded-lg transition-all hover:opacity-80" style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }} title={`Add task to ${col.label}`} aria-label={`Add task to ${col.label}`}>
                   {I.plus}
                 </button>
               )}
@@ -267,17 +280,23 @@ export default function KanbanBoard({
                     onTouchStart={draggable ? (e => handleTouchStart(e, task)) : undefined}
                     onTouchMove={draggable ? handleTouchMove : undefined}
                     onTouchEnd={draggable ? handleTouchEnd : undefined}
+                    onTouchCancel={draggable ? handleTouchEnd : undefined}
                     className={shakeId === task.id ? 'card-shake' : ''}
                     style={{
                       opacity: dragging?.id === task.id ? 0.4 : 1,
                       cursor: draggable ? 'grab' : 'default',
                       transition: 'opacity 0.15s',
                       WebkitTouchCallout: draggable ? 'none' : 'default',
-                      touchAction: draggable ? 'none' : 'auto',
+                      touchAction: draggable ? 'pan-y' : 'auto',
                       outline: isSelected ? '2px solid var(--accent)' : 'none',
                       borderRadius: 'var(--radius-lg)',
                     }}
-                    onClick={(e) => { if (e.ctrlKey || e.metaKey) { e.stopPropagation(); toggleSelect(task.id) } else if (selected.size > 0) { e.stopPropagation(); toggleSelect(task.id) } else { onTaskClick(task) } }}
+                    onClick={(e) => {
+                      if (suppressClick.current) { suppressClick.current = false; e.stopPropagation(); return }
+                      if (e.ctrlKey || e.metaKey) { e.stopPropagation(); toggleSelect(task.id) }
+                      else if (selected.size > 0) { e.stopPropagation(); toggleSelect(task.id) }
+                      else { onTaskClick(task) }
+                    }}
                   >
                     <TaskCard task={task} members={members} onClick={() => { if (selected.size === 0) onTaskClick(task) }} />
                   </div>

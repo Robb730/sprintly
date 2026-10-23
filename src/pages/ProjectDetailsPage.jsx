@@ -85,7 +85,7 @@ function SprintSelectorBar({
     display: "inline-flex",
     alignItems: "center",
     gap: 5,
-    padding: "4px 10px",
+    padding: "8px 12px",
     borderRadius: 20,
     fontSize: 11,
     fontWeight: 500,
@@ -102,7 +102,7 @@ function SprintSelectorBar({
     display: "inline-flex",
     alignItems: "center",
     gap: 5,
-    padding: "4px 10px",
+    padding: "8px 12px",
     borderRadius: 20,
     fontSize: 11,
     fontWeight: 500,
@@ -345,19 +345,19 @@ function PermissionsModal({ member, onClose, onSave }) {
   const [perms, setPerms] = useState({ can_add_tasks: member.can_add_tasks });
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden animate-fade-up opacity-0"
+        className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
         }}
       >
         <div
-          className="flex items-center justify-between px-5 py-4"
+          className="flex items-center justify-between px-5 py-4 shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <div>
@@ -379,7 +379,8 @@ function PermissionsModal({ member, onClose, onSave }) {
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg"
+            aria-label="Close"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg"
             style={{
               color: "var(--text-muted)",
               background: "var(--bg-primary)",
@@ -388,7 +389,7 @@ function PermissionsModal({ member, onClose, onSave }) {
             {I.close}
           </button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-5 py-4 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <div
             className="flex items-start justify-between gap-4 p-3 rounded-xl"
             style={{ background: "var(--bg-primary)" }}
@@ -414,25 +415,33 @@ function PermissionsModal({ member, onClose, onSave }) {
                   can_add_tasks: !prev.can_add_tasks,
                 }))
               }
-              className="relative shrink-0 w-10 h-5 rounded-full transition-all duration-200"
-              style={{
-                background: perms.can_add_tasks
-                  ? "var(--accent)"
-                  : "var(--border)",
-              }}
+              role="switch"
+              aria-checked={perms.can_add_tasks}
+              aria-label="Can add tasks"
+              className="relative shrink-0 flex items-center justify-center"
+              style={{ width: 44, height: 44, margin: "-12px -6px" }}
             >
               <span
-                className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200"
-                style={{ left: perms.can_add_tasks ? 22 : 2 }}
-              />
+                className="relative block w-10 h-5 rounded-full transition-all duration-200"
+                style={{
+                  background: perms.can_add_tasks
+                    ? "var(--accent)"
+                    : "var(--border)",
+                }}
+              >
+                <span
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200"
+                  style={{ left: perms.can_add_tasks ? 22 : 2 }}
+                />
+              </span>
             </button>
           </div>
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-2 pt-1 pb-safe sm:pb-0">
             <Button
               variant="secondary"
               size="sm"
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 min-h-11 sm:min-h-0"
             >
               Cancel
             </Button>
@@ -528,12 +537,12 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden"
+        className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden sheet-card flex flex-col"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
@@ -565,7 +574,7 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg shrink-0"
             style={{
               color: "var(--text-muted)",
               background: "var(--bg-primary)",
@@ -577,7 +586,7 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 flex flex-col gap-4">
+        <div className="px-5 py-4 flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <div>
             <label
               className="block mb-1.5"
@@ -598,7 +607,7 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
             <div>
               <label
                 className="block mb-1.5"
@@ -642,10 +651,10 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
         </div>
 
         {/* Footer */}
-        <div className="grid grid-cols-2 gap-3 px-5 pb-5">
+        <div className="grid grid-cols-2 gap-2 px-5 pt-1 pb-safe sm:pb-5 shrink-0">
           <button
             onClick={onClose}
-            className="py-2 rounded-xl text-xs font-medium"
+            className="py-3 sm:py-2 rounded-xl text-xs font-medium"
             style={{
               background: "var(--bg-primary)",
               border: "1px solid var(--border)",
@@ -659,7 +668,7 @@ function CreateSprintModal({ projectId, onClose, onCreated }) {
             disabled={
               saving || !form.title.trim() || !form.start_date || !form.end_date
             }
-            className="py-2 rounded-xl text-xs font-medium transition-opacity"
+            className="py-3 sm:py-2 rounded-xl text-xs font-medium transition-opacity"
             style={{
               background: "var(--accent)",
               color: "#fff",
@@ -723,12 +732,12 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden"
+        className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden sheet-card flex flex-col"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
@@ -763,7 +772,7 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg shrink-0"
             style={{
               color: "var(--text-muted)",
               background: "var(--bg-primary)",
@@ -775,7 +784,7 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 flex flex-col gap-4">
+        <div className="px-5 py-4 flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <div>
             <label
               className="block mb-1.5"
@@ -826,10 +835,10 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
         </div>
 
         {/* Footer */}
-        <div className="grid grid-cols-2 gap-3 px-5 pb-5">
+        <div className="grid grid-cols-2 gap-2 px-5 pt-1 pb-safe sm:pb-5 shrink-0">
           <button
             onClick={onClose}
-            className="py-2 rounded-xl text-xs font-medium"
+            className="py-3 sm:py-2 rounded-xl text-xs font-medium"
             style={{
               background: "var(--bg-primary)",
               border: "1px solid var(--border)",
@@ -841,7 +850,7 @@ function CreateMilestoneModal({ projectId, onClose, onCreated }) {
           <button
             onClick={handleCreate}
             disabled={saving || !form.title.trim()}
-            className="py-2 rounded-xl text-xs font-medium transition-opacity"
+            className="py-3 sm:py-2 rounded-xl text-xs font-medium transition-opacity"
             style={{
               background: "var(--accent)",
               color: "#fff",
@@ -896,16 +905,15 @@ function AllSprintsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden"
+        className="w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden sheet-card"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
-          maxHeight: "80vh",
           display: "flex",
           flexDirection: "column",
         }}
@@ -936,7 +944,7 @@ function AllSprintsModal({
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg shrink-0"
             style={{
               color: "var(--text-muted)",
               background: "var(--bg-primary)",
@@ -948,7 +956,7 @@ function AllSprintsModal({
         </div>
 
         {/* Sprint list */}
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto flex-1 min-h-0 overscroll-contain pb-safe">
           {sprints.map((s, i) => {
             const status = getStatus(s);
             const st = statusStyle[status];
@@ -1011,7 +1019,7 @@ function AllSprintsModal({
                 {isManager && (
                   <button
                     onClick={() => onDelete(s.id)}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg shrink-0 transition-all hover:opacity-70"
+                    className="relative after:absolute after:-inset-2.5 after:content-[''] w-6 h-6 flex items-center justify-center rounded-lg shrink-0 transition-all hover:opacity-70"
                     style={{
                       color: "var(--text-muted)",
                       background: "var(--bg-primary)",
@@ -1043,16 +1051,15 @@ function AllMilestonesModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden"
+        className="w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden sheet-card"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
-          maxHeight: "80vh",
           display: "flex",
           flexDirection: "column",
         }}
@@ -1087,7 +1094,7 @@ function AllMilestonesModal({
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg shrink-0"
             style={{
               color: "var(--text-muted)",
               background: "var(--bg-primary)",
@@ -1099,7 +1106,7 @@ function AllMilestonesModal({
         </div>
 
         {/* Milestone list */}
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto flex-1 min-h-0 overscroll-contain pb-safe">
           {milestones.map((m, i) => {
             const isOverdue =
               m.due_date &&
@@ -1124,7 +1131,7 @@ function AllMilestonesModal({
               >
                 <button
                   onClick={() => onToggle(m)}
-                  className="shrink-0 flex items-center justify-center rounded-md transition-all"
+                  className="relative shrink-0 flex items-center justify-center rounded-md transition-all after:absolute after:-inset-3.5 after:content-['']"
                   style={{
                     width: 15,
                     height: 15,
@@ -1176,7 +1183,7 @@ function AllMilestonesModal({
                 {isManager && (
                   <button
                     onClick={() => onDelete(m.id)}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg shrink-0 transition-all hover:opacity-70"
+                    className="relative after:absolute after:-inset-2.5 after:content-[''] w-6 h-6 flex items-center justify-center rounded-lg shrink-0 transition-all hover:opacity-70"
                     style={{
                       color: "var(--text-muted)",
                       background: "var(--bg-primary)",
@@ -1367,7 +1374,7 @@ function SprintsPanel({ sprints, projectId, isManager, onSprintsChange }) {
           {isManager && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80"
+              className="relative after:absolute after:-inset-2.5 after:content-[''] w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80"
               style={{
                 color: "var(--text-muted)",
                 background: "var(--bg-primary)",
@@ -1512,7 +1519,7 @@ function MilestonesPanel({
       >
         <button
           onClick={() => handleToggle(m)}
-          className="shrink-0 flex items-center justify-center rounded-md transition-all"
+          className="relative shrink-0 flex items-center justify-center rounded-md transition-all after:absolute after:-inset-3.5 after:content-['']"
           style={{
             width: 15,
             height: 15,
@@ -1618,7 +1625,7 @@ function MilestonesPanel({
           {isManager && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80"
+              className="relative after:absolute after:-inset-2.5 after:content-[''] w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:opacity-80"
               style={{
                 color: "var(--text-muted)",
                 background: "var(--bg-primary)",
@@ -1976,7 +1983,7 @@ export default function ProjectDetailsPage() {
   if (!project) {
     return (
       <div
-        className="flex h-screen items-center justify-center"
+        className="flex h-app items-center justify-center"
         style={{ background: "var(--bg-primary)" }}
       >
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -2016,7 +2023,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
+      className="flex h-app overflow-hidden"
       style={{ background: "var(--bg-primary)" }}
     >
       <Sidebar
@@ -2041,7 +2048,8 @@ export default function ProjectDetailsPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate("/projects")}
-                  className="flex items-center gap-1 text-xs transition-colors hover:opacity-70"
+                  aria-label="Back to projects"
+                  className="-ml-2 p-2 flex items-center gap-1 text-xs transition-colors hover:opacity-70"
                   style={{ color: "var(--text-muted)" }}
                 >
                   {I.arrowLeft}
@@ -2099,6 +2107,8 @@ export default function ProjectDetailsPage() {
                     variant="secondary"
                     size="sm"
                     onClick={() => setShowInvite(true)}
+                    aria-label="Invite member"
+                    title="Invite member"
                   >
                     {I.userPlus}
                     <span className="hidden sm:inline">Invite</span>
@@ -2109,6 +2119,8 @@ export default function ProjectDetailsPage() {
                     variant="primary"
                     size="sm"
                     onClick={() => setCreateStatus("todo")}
+                    aria-label="Add task"
+                    title="Add task"
                   >
                     {I.plus}
                     <span className="hidden sm:inline">Add Task</span>
@@ -2119,6 +2131,8 @@ export default function ProjectDetailsPage() {
                     variant="secondary"
                     size="sm"
                     onClick={() => setShowMarkAllDoneConfirm(true)}
+                    aria-label="Mark all tasks done"
+                    title="Mark all tasks done"
                   >
                     <CheckCircle2 size={14} />
                     <span className="hidden sm:inline">Mark All Done</span>
@@ -2232,7 +2246,7 @@ export default function ProjectDetailsPage() {
 
           {/* Content area */}
           <div className="flex flex-1 overflow-hidden">
-            <div className="flex-1 overflow-auto px-4 md:px-6 py-4">
+            <div className="flex-1 overflow-auto px-4 md:px-6 py-4 pb-28 lg:pb-4">
               {tab === "kanban" && (
                 <KanbanBoard
                   tasks={visibleTasks}
@@ -2382,11 +2396,11 @@ export default function ProjectDetailsPage() {
 
       {showDeleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+            className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 pb-safe sm:pb-6 space-y-4"
             style={{
               background: "var(--bg-card)",
               border: "1px solid var(--border)",

@@ -53,7 +53,7 @@ function IconAction({ title, onClick, danger, children }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="w-[22px] h-[22px] flex items-center justify-center rounded-md transition-opacity hover:opacity-70"
+      className="w-7 h-7 flex items-center justify-center rounded-md transition-opacity hover:opacity-70"
       style={{ color: danger ? 'var(--danger)' : 'var(--text-muted)', background: 'var(--bg-primary)' }}
     >
       {children}
@@ -127,7 +127,7 @@ function ResourceCard({ resource, canDelete, onDelete }) {
           >
             {resource.creator?.display_name || 'Unknown'}, {formatDate(resource.created_at)}
           </span>
-          <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1.5 shrink-0">
             <IconAction title={copied ? 'Copied' : 'Copy link'} onClick={copy}>
               {copied ? <Check size={11} /> : <Copy size={11} />}
             </IconAction>
@@ -207,10 +207,10 @@ function AddLinkModal({ projectId, userId, onClose, onCreated }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-link-title"
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-fade-up"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
             <h2 id="add-link-title" className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
               Add link
@@ -223,14 +223,14 @@ function AddLinkModal({ projectId, userId, onClose, onCreated }) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-7 h-7 flex items-center justify-center rounded-lg"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg shrink-0"
             style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
           >
             <X size={14} />
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-5 py-4 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <div>
             <label htmlFor="link-url" className="block mb-1.5" style={labelStyle}>Link</label>
             <input
@@ -284,11 +284,11 @@ function AddLinkModal({ projectId, userId, onClose, onCreated }) {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 px-5 pb-5">
+        <div className="grid grid-cols-2 gap-2 px-5 pt-1 pb-safe sm:pb-5 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="py-2 rounded-xl text-xs font-medium"
+            className="py-3 sm:py-2 rounded-xl text-xs font-medium"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             Cancel
@@ -296,7 +296,7 @@ function AddLinkModal({ projectId, userId, onClose, onCreated }) {
           <button
             type="submit"
             disabled={saving || !form.url.trim()}
-            className="py-2 rounded-xl text-xs font-medium transition-opacity"
+            className="py-3 sm:py-2 rounded-xl text-xs font-medium transition-opacity"
             style={{ background: 'var(--accent)', color: '#fff', opacity: saving || !form.url.trim() ? 0.5 : 1 }}
           >
             {saving ? 'Adding…' : 'Add link'}
@@ -318,6 +318,11 @@ export default function ResourcesTab({ projectId, userId, isManager }) {
   const [showAdd, setShowAdd] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [query, setQuery] = useState('')
+
+  // Supabase reuses channels by topic — a second ResourcesTab mount (e.g. the
+  // hidden desktop rail + mobile sheet) would get an already-subscribed channel
+  // and throw on `.on()`. A unique suffix keeps every mount's channel separate.
+  const [channelSuffix] = useState(() => Math.random().toString(36).slice(2))
 
   // Refetches are silent (no spinner), so realtime updates don't flash the list
   // or unmount an open modal.
@@ -341,7 +346,7 @@ export default function ResourcesTab({ projectId, userId, isManager }) {
   useEffect(() => {
     if (!projectId) return
     const channel = supabase
-      .channel(`resources:${projectId}`)
+      .channel(`resources:${projectId}:${channelSuffix}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'project_resources', filter: `project_id=eq.${projectId}` },
@@ -349,11 +354,22 @@ export default function ResourcesTab({ projectId, userId, isManager }) {
       )
       .subscribe()
     return () => supabase.removeChannel(channel)
-  }, [projectId, fetchResources])
+  }, [projectId, fetchResources, channelSuffix])
 
   const handleDelete = async (resource) => {
-    const { error } = await supabase.from('project_resources').delete().eq('id', resource.id)
+    // .select() tells us whether a row was actually removed — RLS silently
+    // blocks deletes for links you didn't create (unless you're the PM).
+    const { data, error } = await supabase
+      .from('project_resources')
+      .delete()
+      .eq('id', resource.id)
+      .select('id')
     if (error) { showToast('error', error.message); return }
+    if (!data || data.length === 0) {
+      showToast('error', 'You can only delete links you added.')
+      fetchResources()
+      return
+    }
     setResources((prev) => prev.filter((r) => r.id !== resource.id))
     showToast('success', 'Link removed')
   }

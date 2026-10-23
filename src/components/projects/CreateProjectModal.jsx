@@ -24,22 +24,23 @@ export default function CreateProjectModal({ onClose, onCreate }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in opacity-0"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in opacity-0"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden animate-fade-up opacity-0"
+        className="w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
             New Project
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+            aria-label="Close"
+            className="w-10 h-10 -mr-1.5 rounded-xl flex items-center justify-center transition-colors"
             style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
@@ -51,7 +52,7 @@ export default function CreateProjectModal({ onClose, onCreate }) {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-5 sm:px-6 py-5 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain pb-safe sm:pb-5">
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
               Project title <span style={{ color: 'var(--danger)' }}>*</span>

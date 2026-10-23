@@ -35,14 +35,14 @@ export default function CommentsSection({ taskId, currentUser }) {
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const bottomRef = useRef(null)
+  const listRef = useRef(null)
   const textareaRef = useRef(null)
 
-  // Auto-scroll to bottom when new comments arrive
+  // Auto-scroll the comment list only (scrollIntoView would also scroll the modal).
   useEffect(() => {
-    if (comments.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
+    const el = listRef.current
+    if (!el || comments.length === 0) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [comments.length])
 
   const handleSubmit = async () => {
@@ -52,7 +52,10 @@ export default function CommentsSection({ taskId, currentUser }) {
     try {
       await addComment(taskId, currentUser.id, text)
       setText('')
-      textareaRef.current?.focus()
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+        textareaRef.current.focus()
+      }
     } catch (e) {
       setError(e.message)
     } finally {
@@ -61,7 +64,7 @@ export default function CommentsSection({ taskId, currentUser }) {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) {
       e.preventDefault()
       handleSubmit()
     }
@@ -107,7 +110,7 @@ export default function CommentsSection({ taskId, currentUser }) {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
+        <div ref={listRef} className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-contain pr-1">
           {comments.map((comment) => {
             const isOwn = comment.user_id === currentUser?.id
             const name = authorName(comment)
@@ -161,19 +164,22 @@ export default function CommentsSection({ taskId, currentUser }) {
                   >
                     {comment.content}
 
-                    {/* Delete button — shown on hover for own comments */}
+                    {/* Delete button — hover on desktop, always visible on touch */}
                     {isOwn && (
                       <button
                         onClick={() => deleteComment(comment.id)}
-                        className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity after:absolute after:-inset-2.5 after:content-['']"
                         style={{
+                          width: 22,
+                          height: 22,
                           background: '#dc2626',
                           color: '#fff',
                           border: '1.5px solid var(--bg-card)',
                         }}
                         title="Delete comment"
+                        aria-label="Delete comment"
                       >
-                        <Trash2 size={9} />
+                        <Trash2 size={10} />
                       </button>
                     )}
                   </div>
@@ -181,7 +187,6 @@ export default function CommentsSection({ taskId, currentUser }) {
               </div>
             )
           })}
-          <div ref={bottomRef} />
         </div>
       )}
 
@@ -212,7 +217,8 @@ export default function CommentsSection({ taskId, currentUser }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Add a comment… (Enter to send, Shift+Enter for newline)"
+          placeholder="Add a comment…"
+          enterKeyHint="send"
           rows={1}
           className="flex-1 resize-none text-xs outline-none bg-transparent leading-relaxed"
           style={{
@@ -231,7 +237,7 @@ export default function CommentsSection({ taskId, currentUser }) {
         <button
           onClick={handleSubmit}
           disabled={!text.trim() || submitting}
-          className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0 transition-all"
+          className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg shrink-0 transition-all"
           style={{
             background: text.trim() ? 'var(--accent)' : 'var(--bg-card)',
             color: text.trim() ? '#fff' : 'var(--text-muted)',
@@ -239,6 +245,7 @@ export default function CommentsSection({ taskId, currentUser }) {
             opacity: submitting ? 0.6 : 1,
           }}
           title="Send comment"
+          aria-label="Send comment"
         >
           {submitting
             ? <Loader2 size={12} className="animate-spin" />

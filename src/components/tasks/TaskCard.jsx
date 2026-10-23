@@ -1,4 +1,4 @@
-import { Avatar, PRIORITY_META, formatDate, isOverdue, getAvatarColor, getInitials } from '../data/projectData.jsx'
+import { PRIORITY_META, formatDate, isOverdue, getAvatarColor, getInitials } from '../data/projectData.jsx'
 import I from '../shared/Icons'
 
 export default function TaskCard({ task, members, onClick }) {
@@ -38,8 +38,8 @@ export default function TaskCard({ task, members, onClick }) {
       </p>
 
       {/* Footer row */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-x-2 gap-y-1 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Priority dot */}
           <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md font-medium"
             style={{ background: pri.bg, color: pri.text, fontSize: 10 }}>
@@ -56,10 +56,10 @@ export default function TaskCard({ task, members, onClick }) {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Due date */}
           {due && (
-            <span className="flex items-center gap-0.5 text-xs"
+            <span className="flex items-center gap-0.5 text-xs whitespace-nowrap"
               style={{ color: overdue ? 'var(--danger)' : 'var(--text-muted)', fontSize: 10 }}>
               {overdue && <span style={{ color: 'var(--danger)' }}>{I.warn}</span>}
               {I.calendar}
@@ -77,11 +77,11 @@ export default function TaskCard({ task, members, onClick }) {
   const overflow = assignedMembers.length - visible.length
 
   return assignedMembers.length > 0 ? (
-    <div className="flex items-center" style={{ gap: 2 }}>
+    <div className="flex items-center shrink-0" style={{ gap: 2 }}>
       {visible.map(m => (
         <div
           key={m.id}
-          className="w-5 h-5 rounded-md flex items-center justify-center text-white font-semibold"
+          className="w-5 h-5 rounded-md flex items-center justify-center text-white font-semibold shrink-0"
           style={{ background: getAvatarColor(m.name), fontSize: 8, border: '1.5px solid var(--bg-card)' }}
           title={m.name}
         >

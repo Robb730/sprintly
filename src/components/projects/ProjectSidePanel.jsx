@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Users,
@@ -204,7 +204,7 @@ function TeamTab({ members, now, currentUserId, isManager, onInvite, onRemove })
                     title="Remove member"
                     aria-label={`Remove ${m.name}`}
                     onClick={() => setRemoving(m)}
-                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
                     style={{ color: '#dc2626', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
                   >
                     <UserMinus size={13} />
@@ -327,6 +327,43 @@ export default function ProjectSidePanel({
 
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  // The desktop aside is CSS-hidden on mobile but still mounted. Without this
+  // guard its content would duplicate the mobile sheet's (e.g. two ResourcesTab
+  // instances subscribing to the same Supabase channel topic).
+  const [isDesktop, setIsDesktop] = useState(() =>
+    window.matchMedia('(min-width: 1024px)').matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const onChange = (e) => setIsDesktop(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  // Swipe-down-to-dismiss for the mobile bottom sheet (drag the handle/header).
+  const [sheetDrag, setSheetDrag] = useState(null) // px offset while dragging
+  const [sheetDragging, setSheetDragging] = useState(false)
+  const sheetTouch = useRef({ startY: 0, dy: 0, active: false })
+  const dragGesture = (e) => {
+    if (e.type === 'touchstart') {
+      sheetTouch.current = { startY: e.touches[0].clientY, dy: 0, active: true }
+      setSheetDragging(true)
+      setSheetDrag(0)
+    } else if (e.type === 'touchmove') {
+      if (!sheetTouch.current.active) return
+      const dy = Math.max(0, e.touches[0].clientY - sheetTouch.current.startY)
+      sheetTouch.current.dy = dy
+      setSheetDrag(dy)
+    } else {
+      if (!sheetTouch.current.active) return
+      const dy = sheetTouch.current.dy
+      sheetTouch.current.active = false
+      setSheetDragging(false)
+      if (dy > 90) { setSheetDrag(null); setMobileOpen(false) }
+      else setSheetDrag(0)
+    }
+  }
+
   useEffect(() => {
     if (!mobileOpen) return
     const prev = document.body.style.overflow
@@ -433,7 +470,7 @@ export default function ProjectSidePanel({
           {/* Content */}
           <div className="flex-1 min-h-0 overflow-y-auto" role="tabpanel">
             <div className="p-3 flex flex-col gap-3">
-              {panelContent}
+              {isDesktop && panelContent}
             </div>
           </div>
         </div>
@@ -490,11 +527,11 @@ export default function ProjectSidePanel({
       )}
     </aside>
 
-    {/* Mobile trigger */}
+    {/* Mobile trigger — sits below the bulk action bar so it never steals taps */}
     <button
       type="button"
       onClick={() => setMobileOpen(true)}
-      className="lg:hidden fixed z-40 flex items-center justify-center rounded-full transition-all active:scale-95"
+      className="lg:hidden fixed z-30 flex items-center justify-center rounded-full transition-all active:scale-95"
       style={{
         right: 16,
         bottom: 'calc(16px + env(safe-area-inset-bottom))',
@@ -505,6 +542,7 @@ export default function ProjectSidePanel({
         boxShadow: '0 8px 24px rgba(37,99,235,0.35)',
       }}
       aria-label="Open project panel"
+      aria-expanded={mobileOpen}
     >
       <PanelRight size={22} />
     </button>
@@ -519,32 +557,43 @@ export default function ProjectSidePanel({
           style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
         />
         <div
-          className="absolute inset-x-0 bottom-0 flex flex-col animate-slide-up"
+          className={`absolute inset-x-0 bottom-0 flex flex-col sheet-card ${sheetDrag == null ? 'animate-slide-up' : ''}`}
           style={{
-            maxHeight: '88vh',
             background: 'var(--bg-secondary)',
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             boxShadow: '0 -12px 40px rgba(0,0,0,0.25)',
             paddingBottom: 'env(safe-area-inset-bottom)',
+            transform: sheetDrag ? `translateY(${sheetDrag}px)` : undefined,
+            transition: sheetDragging ? 'none' : 'transform 0.25s cubic-bezier(0.32,0.72,0,1)',
+            overscrollBehavior: 'contain',
           }}
         >
-          <div className="flex justify-center pt-2">
-            <div className="h-1.5 w-10 rounded-full" style={{ background: 'var(--border)' }} />
-          </div>
-          <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-            <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-              Project panel
-            </h2>
-            <button
-              type="button"
-              onClick={() => setMobileOpen(false)}
-              aria-label="Close"
-              className="w-8 h-8 flex items-center justify-center rounded-lg"
-              style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
-            >
-              <X size={16} />
-            </button>
+          {/* Drag zone: swipe down anywhere on the handle/header to dismiss */}
+          <div
+            onTouchStart={dragGesture}
+            onTouchMove={dragGesture}
+            onTouchEnd={dragGesture}
+            onTouchCancel={dragGesture}
+            style={{ touchAction: 'none' }}
+          >
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="h-1.5 w-10 rounded-full" style={{ background: 'var(--border)' }} />
+            </div>
+            <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+                Project panel
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close"
+                className="w-10 h-10 -mr-1 flex items-center justify-center rounded-lg"
+                style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
           <div className="px-3 py-2 shrink-0">
             <div
@@ -578,8 +627,8 @@ export default function ProjectSidePanel({
               })}
             </div>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
-            <div className="flex flex-col gap-3">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pb-safe">
+            <div className="flex flex-col gap-3 pb-2">
               {panelContent}
             </div>
           </div>

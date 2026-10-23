@@ -282,17 +282,18 @@ export default function OverviewTab({ project, tasks, members }) {
 
       {/* Team Progress */}
 <div className="rounded-2xl p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-  <div className="flex items-center justify-between mb-4">
+  <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
     <h4 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
       Team Progress
     </h4>
     {/* Filter toggle */}
-    <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+    <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
       {['all', 'solo', 'shared'].map(f => (
         <button
           key={f}
           onClick={() => setTaskFilter(f)}
-          className="px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-all"
+          aria-pressed={taskFilter === f}
+          className="px-3 py-2 sm:py-1 rounded-md text-xs font-medium capitalize transition-all"
           style={{
             background: taskFilter === f ? 'var(--bg-card)' : 'transparent',
             color: taskFilter === f ? 'var(--text-primary)' : 'var(--text-muted)',

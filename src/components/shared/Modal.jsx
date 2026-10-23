@@ -28,11 +28,10 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div
-        className={`w-full ${sizeMap[size]} rounded-t-2xl sm:rounded-2xl overflow-hidden animate-fade-up ${className}`}
+        className={`w-full ${sizeMap[size]} rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card ${className}`}
         style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
-          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -57,9 +56,9 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
         {footer && (
-          <div className="px-5 py-4 shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="px-5 py-4 shrink-0 pb-safe sm:pb-4" style={{ borderTop: '1px solid var(--border)' }}>
             {footer}
           </div>
         )}

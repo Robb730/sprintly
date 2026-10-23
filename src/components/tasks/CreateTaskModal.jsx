@@ -54,22 +54,23 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-lg rounded-2xl overflow-hidden animate-fade-up opacity-0"
+        className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden animate-slide-up sm:animate-fade-up sheet-card flex flex-col"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
             New Task
           </h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg"
+            aria-label="Close"
+            className="w-10 h-10 -mr-1.5 flex items-center justify-center rounded-lg"
             style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}
           >
             {I.close}
@@ -77,7 +78,7 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-5 py-4 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain pb-safe">
 
           {/* Title */}
           <div>
@@ -137,7 +138,7 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
           </div>
 
           {/* Assignee + Sprint */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Assignee/s</label>
               <AssigneePicker
@@ -163,7 +164,7 @@ export default function CreateTaskModal({ onClose, onCreate, members, sprints = 
           </div>
 
           {/* Due Date + Milestone */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Due Date</label>
               <DatePicker value={form.due_date} onChange={(v) => set('due_date', v)} placeholder="Select due date" />
